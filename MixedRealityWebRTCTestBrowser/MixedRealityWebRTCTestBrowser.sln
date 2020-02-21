@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29521.150
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MixedRealityWebRTCTestBrowser", "MixedRealityWebRTCTestBrowser.csproj", "{EACBD0B9-BAAA-400C-8C3D-2810402AEC1B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EACBD0B9-BAAA-400C-8C3D-2810402AEC1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EACBD0B9-BAAA-400C-8C3D-2810402AEC1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EACBD0B9-BAAA-400C-8C3D-2810402AEC1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EACBD0B9-BAAA-400C-8C3D-2810402AEC1B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C60648CF-A786-426C-8C19-BD3B80DF8584}
+	EndGlobalSection
+EndGlobal
