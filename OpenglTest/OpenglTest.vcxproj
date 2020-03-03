@@ -168,11 +168,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="line.frag" />
-    <None Include="line.geom" />
-    <None Include="line.vert" />
-    <None Include="SimpleFragmentShader.fragmentshader" />
-    <None Include="SimpleVertexShader.vertexshader" />
+    <None Include="shaders\house\house.frag" />
+    <None Include="shaders\house\house.geom" />
+    <None Include="shaders\house\house.vert" />
+    <None Include="shaders\line\line.frag" />
+    <None Include="shaders\line\line.geom" />
+    <None Include="shaders\line\line.vert" />
+    <None Include="shaders\simple\simple.frag" />
+    <None Include="shaders\simple\simple.geom" />
+    <None Include="shaders\simple\simple.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

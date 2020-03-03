@@ -19,6 +19,15 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{976939f2-c608-4900-85bf-a2e97ee13d25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\line">
+      <UniqueIdentifier>{91322d65-e0d2-4350-9309-51f1d42aaffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\simple">
+      <UniqueIdentifier>{c09e99a2-6a42-4ab2-a171-bb7a4f588c1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\house">
+      <UniqueIdentifier>{b4a1f494-72e8-4b15-ab5c-23b4d423c315}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpenglTest.cpp">
@@ -34,20 +43,32 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="line.frag">
-      <Filter>shaders</Filter>
+    <None Include="shaders\line\line.frag">
+      <Filter>shaders\line</Filter>
     </None>
-    <None Include="line.vert">
-      <Filter>shaders</Filter>
+    <None Include="shaders\line\line.geom">
+      <Filter>shaders\line</Filter>
     </None>
-    <None Include="SimpleFragmentShader.fragmentshader">
-      <Filter>shaders</Filter>
+    <None Include="shaders\line\line.vert">
+      <Filter>shaders\line</Filter>
     </None>
-    <None Include="SimpleVertexShader.vertexshader">
-      <Filter>shaders</Filter>
+    <None Include="shaders\simple\simple.frag">
+      <Filter>shaders\simple</Filter>
     </None>
-    <None Include="line.geom">
-      <Filter>shaders</Filter>
+    <None Include="shaders\simple\simple.geom">
+      <Filter>shaders\simple</Filter>
+    </None>
+    <None Include="shaders\simple\simple.vert">
+      <Filter>shaders\simple</Filter>
+    </None>
+    <None Include="shaders\house\house.frag">
+      <Filter>shaders\house</Filter>
+    </None>
+    <None Include="shaders\house\house.geom">
+      <Filter>shaders\house</Filter>
+    </None>
+    <None Include="shaders\house\house.vert">
+      <Filter>shaders\house</Filter>
     </None>
   </ItemGroup>
 </Project>

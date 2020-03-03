@@ -69,22 +69,34 @@ int main()
 	//GLuint programID = LoadShaders( "SimpleVertexShader.vertexshader", "SimpleFragmentShader.fragmentshader" );
 	//GLuint programID = LoadShaders("line.vert", "line.frag");
 	//GLuint programID = LoadShaders("line.vert", "SimpleFragmentShader.fragmentshader", nullptr);
-	GLuint programID = LoadShaders("line.vert", "line.frag", "line.geom");
+	//GLuint programID = LoadShaders("line.vert", "line.frag", nullptr);
+	//GLuint programID = LoadShaders("line/line.vert", "line/line.frag", "line/line.geom");
+	//GLuint programID = LoadShaders("shaders/simple/simple.vert", "shaders/simple/simple.frag", nullptr);
+	//GLuint programID = LoadShaders("shaders/simple/simple.vert", "shaders/simple/simple.frag", "shaders/simple/simple.geom");
+	//GLuint programID = LoadShaders("shaders/line/line.vert", "shaders/line/line.frag", nullptr);
+	GLuint programID = LoadShaders("shaders/line/line.vert", "shaders/line/line.frag", "shaders/line/line.geom");
 
-	/*static const GLfloat g_vertex_buffer_data[] = {
+	static const GLfloat g_vertex_buffer_data[] = {
+		-1.0f, -0.5f, 0.0f, 1.0f,
+		-0.5f, 0.25f, 0.0f, 1.0f,
 		0.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f, 0.0f, 0.0f, 1.0f,
-		0.0f, -1.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f, 1.0f,
-		0.0f, 1.0f, 0.0f, 1.0f,
-	};*/
+		0.5f, 0.25f, 0.0f, 1.0f, 
+		1.0f, 0.5f, 0.0f, 1.0f,
+	};
 
-	static const GLfloat g_vertex_buffer_data[259] = { 0.5f };
+	//float points[] = {
+	//	-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, // top-left
+	//	0.5f, 0.5f, 0.0f, 1.0f, 0.0f, // top-right
+	//	0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
+	//	-0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
+	//};
+
+	//static const GLfloat g_vertex_buffer_data[259] = { 0.5f };
 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
 	//static const GLfloat g_color_buffer_data[] = {
@@ -112,6 +124,8 @@ int main()
 	GLuint decayID = glGetUniformLocation(programID, "decay");
 	GLuint desaturationID = glGetUniformLocation(programID, "desaturation");
 
+	//GLuint greenColourID = glGetUniformLocation(programID, "greenColour");
+
 	do {
 
 		// Clear the screen
@@ -120,8 +134,9 @@ int main()
 		// Use our shader
 		glUseProgram(programID);
 
-		glUniform2f(windowID, 1024.0f, 768.0f);
-		glUniform1ui(nID, 259);
+		//glUniform2f(windowID, 1024.0f, 768.0f);
+		glUniform2f(windowID, 768.0f, 1024.0f);
+		glUniform1ui(nID, 5);
 		glUniform1f(thicknessID, 10.0f);
 		glUniform1f(minThicknessID, 1.5f);
 		glUniform1f(thinningID, 0.05f);
@@ -130,17 +145,31 @@ int main()
 		glUniform1f(decayID, 0.3f);
 		glUniform1f(desaturationID, 0.1f);
 
+		//glUniform1f(greenColourID, 0.5f);
+
 		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+
+		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(
 			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
 			4,                  // size
 			GL_FLOAT,           // type
 			GL_FALSE,           // normalized?
-			0,                  // stride
+			4 * sizeof(float),  // stride
 			(void*)0            // array buffer offset
 		);
+
+		glDisableVertexAttribArray(1);
+		//glEnableVertexAttribArray(1);
+		//glVertexAttribPointer(
+		//	1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		//	3,                  // size
+		//	GL_FLOAT,           // type
+		//	GL_FALSE,           // normalized?
+		//	7 * sizeof(float),  // stride
+		//	(void*)(4 * sizeof(float))            // array buffer offset
+		//);
 
 		// 2nd attribute buffer : colors
 		//glEnableVertexAttribArray(1);
@@ -155,9 +184,12 @@ int main()
 		//);
 
 		// Draw the triangle !
-		glDrawArrays(GL_TRIANGLES, 0, 2*3); // 3 indices starting at 0 -> 1 triangle
+		//glDrawArrays(GL_LINES, 0, 2*2);
+		glDrawArrays(GL_LINE_STRIP_ADJACENCY, 0, 5);
+		//glDrawArrays(GL_TRIANGLES, 0, 2*3); // 3 indices starting at 0 -> 1 triangle
+		//glDrawArrays(GL_POINTS, 0, 4);
 
-		glDisableVertexAttribArray(0);
+		//glDisableVertexAttribArray(0);
 		//glDisableVertexAttribArray(1);
 
 		// Swap buffers
