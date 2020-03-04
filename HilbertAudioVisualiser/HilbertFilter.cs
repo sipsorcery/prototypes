@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 namespace HilbertAudioVisualiser
@@ -30,7 +31,25 @@ namespace HilbertAudioVisualiser
         public const int N = 512;
         public const int FILTER_LENGTH = 767;
         public const int MID = (FILTER_LENGTH - 1) / 2;
-        public const float DELAY_TIME = MID / SAMPLE_RATE; 
+        public const float DELAY_TIME = MID / SAMPLE_RATE;
+
+        public static float[] Data;
+
+        static HilbertFilter()
+        {
+            Data = new float[] {
+                -1.0f, -0.5f, 0.0f, 1.0f,
+                -0.5f, 0.25f, 0.0f, 1.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+                0.5f, 0.25f, 0.0f, 1.0f,
+                1.0f, 0.5f, 0.0f, 1.0f,
+                1.0f, -0.5f, 0.0f, 1.0f,
+                0.5f, 0.25f, 0.0f, 1.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+                0.5f, 0.25f, 0.0f, 1.0f,
+                1.0f, 0.5f, 0.0f, 1.0f,
+            };
+        }
 
         /// <summary>
         /// 

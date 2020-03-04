@@ -82,6 +82,12 @@ int main()
 		0.0f, 0.0f, 0.0f, 1.0f,
 		0.5f, 0.25f, 0.0f, 1.0f, 
 		1.0f, 0.5f, 0.0f, 1.0f,
+
+		1.0f, -0.5f, 0.0f, 1.0f,
+		0.5f, 0.25f, 0.0f, 1.0f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+		0.5f, 0.25f, 0.0f, 1.0f,
+		1.0f, 0.5f, 0.0f, 1.0f,
 	};
 
 	//float points[] = {
@@ -185,7 +191,7 @@ int main()
 
 		// Draw the triangle !
 		//glDrawArrays(GL_LINES, 0, 2*2);
-		glDrawArrays(GL_LINE_STRIP_ADJACENCY, 0, 5);
+		glDrawArrays(GL_LINE_STRIP_ADJACENCY, 0, 10);
 		//glDrawArrays(GL_TRIANGLES, 0, 1*3); // 3 indices starting at 0 -> 1 triangle
 		//glDrawArrays(GL_POINTS, 0, 4);
 

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="1.10.0" />
+    <PackageReference Include="SharpGL.WinForms" Version="2.4.1.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +28,18 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="shaders\line\line.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="shaders\line\line.geom">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="shaders\line\line.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
