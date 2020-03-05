@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using SharpGL;
@@ -11,7 +12,7 @@ using SharpGL.Shaders;
 using SharpGL.Enumerations;
 using SharpGL.VertexBuffers;
 
-namespace HilbertAudioVisualiser
+namespace AudioScope
 {
     public partial class FormAudioScope : Form
     {
@@ -19,11 +20,18 @@ namespace HilbertAudioVisualiser
         private const string FRAGMENT_SHADER_PATH = "shaders/line/line.frag";
         private const string GEOMETRY_SHADER_PATH = "shaders/line/line.geom";
 
+        private AudioScope _audioScope = new AudioScope();
         private SharpGL.Shaders.ShaderProgram _prog;
 
         public FormAudioScope()
         {
             InitializeComponent();
+        }
+
+        private void FormAudioScope_Load(object sender, EventArgs e)
+        {
+            _audioScope.InitAudio();
+            _audioScope.Start();
         }
 
         private void OpenGLControl_OpenGLInitialized(object sender, EventArgs e)
@@ -66,7 +74,6 @@ namespace HilbertAudioVisualiser
             {
                 throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link shader program with ID {0}.", _prog.ShaderProgramObject), _prog.GetInfoLog(gl));
             }
-           
         }
 
         private void openGLControl1_OpenGLDraw(object sender, RenderEventArgs e)
@@ -98,12 +105,13 @@ namespace HilbertAudioVisualiser
             gl.Uniform1(decayID, 0.3f);
             gl.Uniform1(desaturationID, 0.1f);
 
-            float[] data = HilbertFilter.Data;
+            var data = _audioScope.GetSample();
+            var dataFlattened = data.SelectMany(x => x.Vec).ToArray();
 
             VertexBuffer vertexBuffer = new VertexBuffer();
             vertexBuffer.Create(gl);
             vertexBuffer.Bind(gl);
-            vertexBuffer.SetData(gl, 0, data, false, 4);
+            vertexBuffer.SetData(gl, 0, dataFlattened, false, 4);
 
             gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
         }

@@ -1,4 +1,4 @@
-namespace HilbertAudioVisualiser
+namespace AudioScope
 {
     partial class FormAudioScope
     {
@@ -47,6 +47,7 @@ namespace HilbertAudioVisualiser
             this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.TimerBased;
             this.openGLControl1.Size = new System.Drawing.Size(768, 410);
             this.openGLControl1.TabIndex = 0;
+            this.Load += new System.EventHandler(this.FormAudioScope_Load);
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl_OpenGLInitialized);
             this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl1_OpenGLDraw);
             // 

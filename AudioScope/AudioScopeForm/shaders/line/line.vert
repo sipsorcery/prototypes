@@ -4,7 +4,7 @@ uniform vec2 window;
 uniform uint n;
 
 in vec4 vec;
-out vec3 angular_velocity;
+out vec2 angular_velocity;
 
 void main() {
     float n = n;
@@ -14,5 +14,5 @@ void main() {
     } else {
         gl_Position = vec4(vec.y, vec.x, z, 1.0);
     }
-    angular_velocity = vec.zxw;
+    angular_velocity = vec.zw;
 }
