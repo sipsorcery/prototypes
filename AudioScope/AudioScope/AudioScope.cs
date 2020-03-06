@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using MathNet.Numerics;
@@ -65,11 +66,11 @@ namespace AudioScope
         private CircularBuffer _audioInBuffer;
         private PortAudioSharp.Stream _audStm;
 
-        private Complex32[] _analytic;
+        private Complex[] _analytic;
         private MathNet.Filtering.OnlineFilter _lowpass;
         private MathNet.Filtering.OnlineFilter _noiseLowpass;
 
-        private Complex32[] _timeRingBuffer = new Complex32[2 * FFT_SIZE];
+        private Complex[] _timeRingBuffer = new Complex[2 * FFT_SIZE];
         private Vec4[] _analyticBuffer = new Vec4[BUFFER_SIZE + 3];
         private int _timeIndex = 0;
         private Complex32 _prevInput = new Complex32(0.0f, 0.0f);
@@ -166,7 +167,7 @@ namespace AudioScope
         {
             for (int i = 0; i < samples.Length; i++)
             {
-                Complex32 mono = new Complex32(GAIN * samples[i], 0.0f);
+                Complex mono = new Complex(GAIN * samples[i], 0.0f);
                 _timeRingBuffer[_timeIndex + i] = mono;       // Left.
                 _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
 
@@ -183,30 +184,27 @@ namespace AudioScope
             {
                 _timeIndex = 0;
             }
-            //MathNet.Numerics.IntegralTransforms..Forward(freqBuffer, FourierOptions.NoScaling | FourierOptions.NumericalRecipes);
-            Fourier.Forward(freqBuffer, FourierOptions.NoScaling);
-            //Fourier.Forward(freqBuffer);
 
-            //var signal = Accord.Audio.Signal.FromArray(samples, SAMPLE_RATE, Accord.Audio.SampleFormat.Format32BitIeeeFloat).ToComplex();
-            //signal.ForwardFourierTransform();
-            //var freqBuffer = signal.ToArray(0);
+            var signal = Accord.Audio.Signal.FromArray(freqBuffer, SAMPLE_RATE, Accord.Audio.SampleFormat.Format32BitIeeeFloat).ToComplex();
+            signal.ForwardFourierTransform();
+            var fftBuffer = signal.ToArray(0);
 
-            for (int j = 0; j < freqBuffer.Length; j++)
+            for (int j = 0; j < fftBuffer.Length; j++)
             {
                 //Console.WriteLine($"{j}: {freqBuffer[j]} * {_analytic[j]}");
-                freqBuffer[j] = freqBuffer[j] * _analytic[j];
+                fftBuffer[j] = fftBuffer[j] * _analytic[j];
                 //Console.WriteLine($"result {freqBuffer[j]}");
             }
 
-            Fourier.Inverse(freqBuffer, FourierOptions.NoScaling);
-            //Fourier.Inverse(freqBuffer);
+            var signal2 = Accord.Audio.Signal.FromArray(fftBuffer, SAMPLE_RATE, Accord.Audio.SampleFormat.Format32BitIeeeFloat).ToComplex();
+            signal2.BackwardFourierTransform();
 
             //_analyticBuffer[0] = _analyticBuffer[BUFFER_SIZE];
             //_analyticBuffer[1] = _analyticBuffer[BUFFER_SIZE + 1];
             //_analyticBuffer[2] = _analyticBuffer[BUFFER_SIZE + 2];
             float scale = (float)FFT_SIZE;
 
-            var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).ToArray();
+            var complexAnalyticBuffer = signal2.ToArray(0).Skip(FFT_SIZE - BUFFER_SIZE).ToArray();
 
             //var complexAnalyticBuffer = signal.ToArray(0);
 
@@ -221,8 +219,8 @@ namespace AudioScope
 
                 _data[k] = new Vec4
                 {
-                    X0 = complexAnalyticBuffer[k].Real / scale,
-                    X1 = complexAnalyticBuffer[k].Imaginary / scale,
+                    X0 = (float)(complexAnalyticBuffer[k].Real / scale),
+                    X1 = (float)(complexAnalyticBuffer[k].Imaginary / scale),
                     X2 = 0.75f, //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
                     X3 = 0, //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
                 };
@@ -242,31 +240,31 @@ namespace AudioScope
             return (float)(angle / (2*Math.PI));
         }
 
-        private Complex32[] MakeAnalytic(uint n, uint m)
+        private Complex[] MakeAnalytic(uint n, uint m)
         {
-            var impulse = new Complex32[m];
+            var impulse = new Complex[m];
 
             var mid = (n - 1) / 2;
 
-            impulse[mid] = new Complex32(1.0f, 0.0f);
+            impulse[mid] = new Complex(1.0f, 0.0f);
             float re = -1.0f / (mid - 1);
             for (int i = 0; i < mid + 1; i++)
             {
                 if (i % 2 == 0)
                 {
-                    impulse[mid + i] = new Complex32(re, impulse[mid + i].Imaginary);
-                    impulse[mid - i] = new Complex32(re, impulse[mid - i].Imaginary);
+                    impulse[mid + i] = new Complex(re, impulse[mid + i].Imaginary);
+                    impulse[mid - i] = new Complex(re, impulse[mid - i].Imaginary);
                 }
                 else
                 {
                     float im = (float)(2.0 / Math.PI / i);
-                    impulse[mid + i] = new Complex32(impulse[mid + i].Real, im);
-                    impulse[mid - i] = new Complex32(impulse[mid - i].Real, -im);
+                    impulse[mid + i] = new Complex(impulse[mid + i].Real, im);
+                    impulse[mid - i] = new Complex(impulse[mid - i].Real, -im);
                 }
                 // hamming window
                 var k = 0.53836 + 0.46164 * Math.Cos(i * Math.PI / (mid + 1));
-                impulse[mid + i] = new Complex32((float)(impulse[mid + i].Real * k), (float)(impulse[mid + i].Imaginary * k));
-                impulse[mid - i] = new Complex32((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
+                impulse[mid + i] = new Complex((float)(impulse[mid + i].Real * k), (float)(impulse[mid + i].Imaginary * k));
+                impulse[mid - i] = new Complex((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
             }
 
             //for (int i=0; i<m; i++)
@@ -274,14 +272,17 @@ namespace AudioScope
             //    Console.WriteLine($"{i}:{impulse[i]}");
             //}
 
-            Fourier.Forward(impulse, FourierOptions.NoScaling);
+            //Fourier.Forward(impulse, FourierOptions.NoScaling);
 
             //for (int i = 0; i < m; i++)
             //{
             //    Console.WriteLine($"{i}:{impulse[i]}");
             //}
 
-            return impulse;
+            var impulseSignal = Accord.Audio.Signal.FromArray(impulse, SAMPLE_RATE, Accord.Audio.SampleFormat.Format32BitIeeeFloat).ToComplex();
+            impulseSignal.ForwardFourierTransform();
+
+            return impulseSignal.ToArray(0);
         }
     }
 }
