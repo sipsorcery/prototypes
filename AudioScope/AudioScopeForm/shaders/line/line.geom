@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 uniform uint n;
 uniform vec2 window;

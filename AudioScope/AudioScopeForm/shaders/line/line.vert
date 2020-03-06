@@ -1,7 +1,8 @@
-#version 330
+#version 150
 
 uniform vec2 window;
 uniform uint n;
+uniform float decay;
 
 in vec4 vec;
 out vec2 angular_velocity;

@@ -1,4 +1,5 @@
 ﻿using System;
+using MathNet.Numerics;
 
 namespace AudioScope
 {
@@ -6,7 +7,7 @@ namespace AudioScope
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Audio Scope");
 
             AudioScope audioScope = new AudioScope();
             audioScope.InitAudio();

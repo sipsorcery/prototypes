@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 uniform bool colorize;
 uniform float base_hue;
@@ -19,13 +19,12 @@ vec3 hsv2rgb(vec3 c) {
 }
 
 void main() {
-    /*float alpha = mix(1.0 - decay, 1.0, position);
+    float alpha = mix(1.0 - decay, 1.0, position);
     if (colorize) {
         float phase = log2(angle.x);
         float saturation = exp2(-desaturation * angle.y); // more noise -> less saturation
         color = vec4(hsv2rgb(vec3(base_hue + phase, saturation, 1.0)), alpha);
     } else {
         color = vec4(hsv2rgb(vec3(base_hue, 1.0, 1.0)), alpha);
-    }*/
-    color = vec4(1.0, 0.0, 0.0, 1.0);
+    }
 }

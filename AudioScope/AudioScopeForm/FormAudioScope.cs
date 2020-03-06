@@ -22,6 +22,8 @@ namespace AudioScope
 
         private AudioScope _audioScope = new AudioScope();
         private SharpGL.Shaders.ShaderProgram _prog;
+        private List<float[]> _dump;
+        private int _dumpIndex = 0;
 
         public FormAudioScope()
         {
@@ -32,6 +34,26 @@ namespace AudioScope
         {
             _audioScope.InitAudio();
             _audioScope.Start();
+
+            //_dump = new List<float[]>();
+
+            //using (StreamReader sr = new StreamReader("dump.txt"))
+            //{
+            //    while (!sr.EndOfStream)
+            //    {
+            //        var line = sr.ReadLine();
+            //        var fields = line.Split(',');
+            //        List<float> samples = new List<float>();
+            //        foreach (var field in fields)
+            //        {
+            //            if (!String.IsNullOrEmpty(field.Trim()))
+            //            {
+            //                samples.Add(float.Parse(field));
+            //            }
+            //        }
+            //        _dump.Add(samples.ToArray());
+            //    }
+            //}
         }
 
         private void OpenGLControl_OpenGLInitialized(object sender, EventArgs e)
@@ -106,14 +128,24 @@ namespace AudioScope
             gl.Uniform1(desaturationID, 0.1f);
 
             var data = _audioScope.GetSample();
-            var dataFlattened = data.SelectMany(x => x.Vec).ToArray();
+            //var data = _dump[_dumpIndex++];
+            //if(_dumpIndex >= _dump.Count)
+            //{
+            //    _dumpIndex = 0;
+            //}
 
-            VertexBuffer vertexBuffer = new VertexBuffer();
-            vertexBuffer.Create(gl);
-            vertexBuffer.Bind(gl);
-            vertexBuffer.SetData(gl, 0, dataFlattened, false, 4);
+            if (data != null)
+            {
+                var dataFlattened = data.SelectMany(x => x.Vec).ToArray();
 
-            gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
+                VertexBuffer vertexBuffer = new VertexBuffer();
+                vertexBuffer.Create(gl);
+                vertexBuffer.Bind(gl);
+                vertexBuffer.SetData(gl, 0, dataFlattened, false, 4);
+                //vertexBuffer.SetData(gl, 0, data, false, 4);
+
+                gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
+            }
         }
     }
 }
