@@ -6,10 +6,12 @@
 
   <ItemGroup>
     <PackageReference Include="Accord.Audio" Version="3.8.2-alpha" />
+    <PackageReference Include="FFTW.NET" Version="1.0.1" />
     <PackageReference Include="MathNet.Filtering" Version="0.6.0" />
     <PackageReference Include="MathNet.Numerics" Version="4.9.0" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="PortAudioSharp" Version="0.1.0" />
+    <PackageReference Include="SignalProcessor" Version="0.1.20" />
   </ItemGroup>
 
 </Project>
