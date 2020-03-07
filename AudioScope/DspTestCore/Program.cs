@@ -6,30 +6,108 @@ namespace DspTestCore
 {
     class Program
     {
-        private const int SAMPLE_COUNT = 100;
+        private const int FFT_SIZE = 100;
 
         static void Main(string[] args)
         {
             Console.WriteLine("FFT Test");
 
-            Complex[] buffer = new Complex[SAMPLE_COUNT];
-
-            for(int i=0; i< SAMPLE_COUNT; i++)
+            uint n = FFT_SIZE;
+            if (n % 2 == 0)
             {
-                double re = Math.Sin(2.0f * Math.PI * 3 * ((double)i / SAMPLE_COUNT));
+                n -= 1;
+            }
+
+           Console.WriteLine($"n={n}.");
+
+            var analytic = MakeAnalytic(n, FFT_SIZE);
+
+            Console.WriteLine("Analytic Series:");
+            for (int j = 0; j < FFT_SIZE; j++)
+            {
+                Console.WriteLine($"{j}: {analytic[j]} {analytic[j].Magnitude}");
+            }
+
+            Complex[] buffer = new Complex[FFT_SIZE];
+
+            for (int i = 0; i < FFT_SIZE; i++)
+            {
+                double re = Math.Sin(2.0f * Math.PI * 3 * ((double)i / FFT_SIZE));
                 buffer[i] = new Complex(re, 0);
             }
 
             Fourier.Forward(buffer, FourierOptions.NoScaling);
 
-            for(int j = 0; j<SAMPLE_COUNT; j++)
+            Console.WriteLine("Frequency Series:");
+            for (int j = 0; j < FFT_SIZE; j++)
             {
-                Console.WriteLine($"{j}: {buffer[j]}");
-                if(buffer[j].Magnitude > 1.0)
-                {
-                    Console.WriteLine("Freq hit.");
-                }
+                Console.WriteLine($"{j}: {buffer[j]} {buffer[j].Magnitude}");
             }
+
+            for (int j = 0; j <buffer.Length; j++)
+            {
+                //Console.WriteLine($"{j}: {freqBuffer[j]} * {_analytic[j]}");
+                buffer[j] = buffer[j] * analytic[j];
+                //Console.WriteLine($"result {freqBuffer[j]}");
+            }
+
+            Console.WriteLine("Modified Frequency Series:");
+            for (int j = 0; j < FFT_SIZE; j++)
+            {
+                Console.WriteLine($"{j}: {buffer[j]} {buffer[j].Magnitude}");
+            }
+
+            Fourier.Inverse(buffer, FourierOptions.NoScaling);
+
+            Console.WriteLine("Recovered Time Series:");
+            for (int j = 0; j < FFT_SIZE; j++)
+            {
+                Console.WriteLine($"{j}: {buffer[j]} {buffer[j].Magnitude}");
+            }
+        }
+
+        private static Complex[] MakeAnalytic(uint n, uint m)
+        {
+            Console.WriteLine($"MakeAnalytic n={n}, m={m}.");
+
+            var impulse = new Complex[m];
+
+            var mid = (n - 1) / 2;
+
+            impulse[mid] = new Complex(1.0f, 0.0f);
+            float re = -1.0f / (mid - 1);
+            for (int i = 1; i < mid + 1; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    impulse[mid + i] = new Complex(re, impulse[mid + i].Imaginary);
+                    impulse[mid - i] = new Complex(re, impulse[mid - i].Imaginary);
+                }
+                else
+                {
+                    float im = (float)(2.0 / Math.PI / i);
+                    impulse[mid + i] = new Complex(impulse[mid + i].Real, im);
+                    impulse[mid - i] = new Complex(impulse[mid - i].Real, -im);
+                }
+                // hamming window
+                var k = 0.53836 + 0.46164 * Math.Cos(i * Math.PI / (mid + 1));
+                impulse[mid + i] = new Complex((float)(impulse[mid + i].Real * k), (float)(impulse[mid + i].Imaginary * k));
+                impulse[mid - i] = new Complex((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
+            }
+
+            //for (int i=0; i<m; i++)
+            //{
+            //    Console.WriteLine($"{i}:{impulse[i]}");
+            //}
+
+            Fourier.Forward(impulse, FourierOptions.NoScaling);
+
+            //for (int i = 0; i < m; i++)
+            //{
+            //    Console.WriteLine($"{i}:{impulse[i]}");
+            //}
+
+            return impulse;
         }
     }
 }

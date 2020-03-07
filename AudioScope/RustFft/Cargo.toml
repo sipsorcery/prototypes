@@ -1,0 +1,12 @@
+[package]
+name = "RustFft"
+version = "0.1.0"
+authors = ["Aaron Clauson <aaron@sipsorcery.com>"]
+edition = "2018"
+
+[dependencies]
+num = "0.1.36"
+
+[dependencies.rustfft]
+git = "https://github.com/awelkie/RustFFT"
+rev = "6f4aca6"

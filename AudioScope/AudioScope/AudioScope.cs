@@ -35,7 +35,7 @@ namespace AudioScope
         public const float maxAmplitude = 4.0F;
         public const int B = (1 << 16) - 1;
         public const int M = 4;
-        public const int FFT_SIZE = 1024;
+        public const int FFT_SIZE = 256;
         public const int MID = (FFT_SIZE - 1) / 2;
         public const float DELAY_TIME = MID / SAMPLE_RATE;
         public const float GAIN = 1.0f;
@@ -65,7 +65,8 @@ namespace AudioScope
 
         public AudioScope()
         {
-            uint n = FFT_SIZE - BUFFER_SIZE;
+            //uint n = FFT_SIZE - BUFFER_SIZE;
+            uint n = FFT_SIZE;
             if (n % 2 == 0)
             {
                 n -= 1;
@@ -159,7 +160,7 @@ namespace AudioScope
                 //Console.WriteLine(GAIN * re);
             }
 
-            _timeIndex = _timeIndex + BUFFER_SIZE;
+            _timeIndex = (_timeIndex + BUFFER_SIZE) % FFT_SIZE;
 
             //Console.WriteLine($"timeIndex {_timeIndex}.");
 
@@ -187,7 +188,7 @@ namespace AudioScope
             //_analyticBuffer[0] = _analyticBuffer[BUFFER_SIZE];
             //_analyticBuffer[1] = _analyticBuffer[BUFFER_SIZE + 1];
             //_analyticBuffer[2] = _analyticBuffer[BUFFER_SIZE + 2];
-            float scale = (float)FFT_SIZE;
+            float scale = (float)FFT_SIZE / 64;
 
             var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).ToArray();
 
@@ -230,7 +231,7 @@ namespace AudioScope
 
             impulse[mid] = new Complex32(1.0f, 0.0f);
             float re = -1.0f / (mid - 1);
-            for (int i = 0; i < mid + 1; i++)
+            for (int i = 1; i < mid + 1; i++)
             {
                 if (i % 2 == 0)
                 {
@@ -249,17 +250,7 @@ namespace AudioScope
                 impulse[mid - i] = new Complex32((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
             }
 
-            //for (int i=0; i<m; i++)
-            //{
-            //    Console.WriteLine($"{i}:{impulse[i]}");
-            //}
-
             Fourier.Forward(impulse, FourierOptions.NoScaling);
-
-            //for (int i = 0; i < m; i++)
-            //{
-            //    Console.WriteLine($"{i}:{impulse[i]}");
-            //}
 
             return impulse;
         }
