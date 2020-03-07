@@ -28,19 +28,6 @@ using PortAudioSharp;
 
 namespace AudioScope
 {
-    public struct Vec4
-    {
-        public float[] Vec
-        {
-            get { return new float[] { X0, X1, X2, X3 }; }
-        }
-
-        public float X0;
-        public float X1;
-        public float X2;
-        public float X3;
-    }
-
     public class AudioScope
     {
         public const int NUM_CHANNELS = 2;
@@ -70,17 +57,16 @@ namespace AudioScope
         private MathNet.Filtering.OnlineFilter _noiseLowpass;
 
         private Complex32[] _timeRingBuffer = new Complex32[2 * FFT_SIZE];
-        private Vec4[] _analyticBuffer = new Vec4[BUFFER_SIZE + 3];
         private int _timeIndex = 0;
         private Complex32 _prevInput = new Complex32(0.0f, 0.0f);
         private Complex32 _prevDiff = new Complex32(0.0f, 0.0f);
 
-        private static Vec4[] _data = new Vec4[BUFFER_SIZE + 3];
+        private static float[] _data = new float[BUFFER_SIZE * 4];
 
         public AudioScope()
         {
             uint n = FFT_SIZE - BUFFER_SIZE;
-            if(n % 2 == 0)
+            if (n % 2 == 0)
             {
                 n -= 1;
             }
@@ -90,7 +76,7 @@ namespace AudioScope
             _noiseLowpass = MathNet.Filtering.OnlineFilter.CreateLowpass(MathNet.Filtering.ImpulseResponse.Infinite, 0.5, 0.7);
         }
 
-        public Vec4[] GetSample()
+        public float[] GetSample()
         {
             return _data;
         }
@@ -142,7 +128,7 @@ namespace AudioScope
         private void AudioDataAvailable(object sender, WaveInEventArgs args)
         {
             _audioInBuffer.Write(args.Buffer, 0, args.BytesRecorded);
-            while(_audioInBuffer.Count > (BUFFER_SIZE * 4))
+            while (_audioInBuffer.Count > (BUFFER_SIZE * 4))
             {
                 int bytesPerSample = _waveFormat.BlockAlign;
 
@@ -179,7 +165,7 @@ namespace AudioScope
 
             var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
 
-            if(_timeIndex == FFT_SIZE)
+            if (_timeIndex == FFT_SIZE)
             {
                 _timeIndex = 0;
             }
@@ -219,13 +205,10 @@ namespace AudioScope
                 //_prevDiff = diff;
                 //var output = _lowpass.ProcessSample(angle);
 
-                _data[k] = new Vec4
-                {
-                    X0 = complexAnalyticBuffer[k].Real / scale,
-                    X1 = complexAnalyticBuffer[k].Imaginary / scale,
-                    X2 = 0.75f, //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
-                    X3 = 0, //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
-                };
+                _data[k * 4] = complexAnalyticBuffer[k].Real / scale;
+                _data[k * 4 + 1] = complexAnalyticBuffer[k].Imaginary / scale;
+                _data[k * 4 + 2] = 0.75f; //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
+                _data[k * 4 + 3] = 0; //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
 
                 //Console.WriteLine($"{k}: {_data[k].X0},{_data[k].X1},{_data[k].X2},{_data[k].X3}");
             }
@@ -239,7 +222,7 @@ namespace AudioScope
             var lenProduct = u.Magnitude * v.Magnitude;
             var theta = (u.Real * v.Real - u.Imaginary * v.Imaginary) / lenProduct;
             var angle = Math.Acos(theta);
-            return (float)(angle / (2*Math.PI));
+            return (float)(angle / (2 * Math.PI));
         }
 
         private Complex32[] MakeAnalytic(uint n, uint m)

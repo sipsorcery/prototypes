@@ -128,21 +128,13 @@ namespace AudioScope
             gl.Uniform1(desaturationID, 0.1f);
 
             var data = _audioScope.GetSample();
-            //var data = _dump[_dumpIndex++];
-            //if(_dumpIndex >= _dump.Count)
-            //{
-            //    _dumpIndex = 0;
-            //}
 
             if (data != null)
             {
-                var dataFlattened = data.SelectMany(x => x.Vec).ToArray();
-
                 VertexBuffer vertexBuffer = new VertexBuffer();
                 vertexBuffer.Create(gl);
                 vertexBuffer.Bind(gl);
-                vertexBuffer.SetData(gl, 0, dataFlattened, false, 4);
-                //vertexBuffer.SetData(gl, 0, data, false, 4);
+                vertexBuffer.SetData(gl, 0, data, false, 4);
 
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
             }

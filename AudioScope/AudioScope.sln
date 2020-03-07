@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioScope", "AudioScope\Au
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioScopeForm", "AudioScopeForm\AudioScopeForm.csproj", "{E6E8800E-42B6-4479-853C-0978D00A518A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DspTests", "DspTests\DspTests.csproj", "{A23366D4-0D65-4073-8B70-01D8914D0E9B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{E6E8800E-42B6-4479-853C-0978D00A518A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6E8800E-42B6-4479-853C-0978D00A518A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6E8800E-42B6-4479-853C-0978D00A518A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

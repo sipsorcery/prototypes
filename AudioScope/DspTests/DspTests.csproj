@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MathNet.Filtering" Version="0.6.0" />
+    <PackageReference Include="MathNet.Numerics" Version="4.9.0" />
+    <PackageReference Include="NAudio" Version="1.10.0" />
+    <PackageReference Include="SciChart" Version="6.1.0.13075" />
+    <PackageReference Include="SciChart.ExternalDependencies" Version="6.1.0.13075" />
+  </ItemGroup>
+
+</Project>

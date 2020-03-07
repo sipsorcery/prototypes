@@ -33,3 +33,5 @@
 **/bin
 **/obj
 **/*.user
+
+**/.ipynb_checkpoints
