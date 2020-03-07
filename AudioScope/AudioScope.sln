@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioScope", "AudioScope\Au
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioScopeForm", "AudioScopeForm\AudioScopeForm.csproj", "{E6E8800E-42B6-4479-853C-0978D00A518A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DspTests", "DspTests\DspTests.csproj", "{A23366D4-0D65-4073-8B70-01D8914D0E9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DspTests", "DspTests\DspTests.csproj", "{A23366D4-0D65-4073-8B70-01D8914D0E9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DspTestCore", "DspTestCore\DspTestCore.csproj", "{9DF315DB-C0A4-4EA1-AFE4-32F5E9B3F73D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A23366D4-0D65-4073-8B70-01D8914D0E9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DF315DB-C0A4-4EA1-AFE4-32F5E9B3F73D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DF315DB-C0A4-4EA1-AFE4-32F5E9B3F73D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DF315DB-C0A4-4EA1-AFE4-32F5E9B3F73D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DF315DB-C0A4-4EA1-AFE4-32F5E9B3F73D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

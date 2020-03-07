@@ -165,13 +165,10 @@ namespace AudioScope
 
             var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
 
-            if (_timeIndex == FFT_SIZE)
-            {
-                _timeIndex = 0;
-            }
             //MathNet.Numerics.IntegralTransforms..Forward(freqBuffer, FourierOptions.NoScaling | FourierOptions.NumericalRecipes);
-            Fourier.Forward(freqBuffer, FourierOptions.NoScaling);
-            //Fourier.Forward(freqBuffer);
+
+            //Fourier.ForwardReal(freqBuffer, freqBuffer.Length, FourierOptions.NoScaling);
+            Fourier.Forward(freqBuffer);
 
             //var signal = Accord.Audio.Signal.FromArray(samples, SAMPLE_RATE, Accord.Audio.SampleFormat.Format32BitIeeeFloat).ToComplex();
             //signal.ForwardFourierTransform();
