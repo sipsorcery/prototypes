@@ -4,7 +4,7 @@ extern crate rustfft;
 use num::complex::Complex;
 use rustfft::FFT;
 
-const FFT_SIZE: usize = 100;
+const FFT_SIZE: usize = 4;
 
 fn main() {
     println!("Rust Fft Test");
@@ -18,16 +18,16 @@ fn main() {
 
     let analytic = make_analytic(n, FFT_SIZE);
 
-    println!("Analytic series:");
-    for i in 0..FFT_SIZE  {
-        println!("{}: {} {}", i, analytic[i], analytic[i].norm());
-    }
+    // println!("Analytic series:");
+    // for i in 0..FFT_SIZE  {
+    //     println!("{}: {} {}", i, analytic[i], analytic[i].norm());
+    // }
 
     let mut fft = FFT::new(FFT_SIZE, false);
     let mut ifft = FFT::new(FFT_SIZE, true);
     let mut time_series = vec![Complex::new(0.0f32, 0.0); FFT_SIZE];
     let mut freq_series = vec![Complex::new(0.0f32, 0.0); FFT_SIZE];
-    let mut recovered_time_series = vec![Complex::new(0.0f32, 0.0); FFT_SIZE];
+    let mut phase_shifted = vec![Complex::new(0.0f32, 0.0); FFT_SIZE];
 
     for i in 0..FFT_SIZE {
         let re: f32 = (2.0 * std::f64::consts::PI * 3.0 * (i as f64 / FFT_SIZE as f64)).sin() as f32;
@@ -36,25 +36,32 @@ fn main() {
 
     fft.process(&time_series[..], &mut freq_series[..]);
 
-    println!("Frequency series:");
-    for i in 0..FFT_SIZE  {
-        println!("{}: {} {}", i, freq_series[i], freq_series[i].norm());
-    }
+    // println!("Frequency series:");
+    // for i in 0..FFT_SIZE  {
+    //     println!("{}: {} {}", i, freq_series[i], freq_series[i].norm());
+    // }
 
     for (x, y) in analytic.iter().zip(freq_series.iter_mut()) {
         *y = *x * *y;
     }
 
-    println!("Modified Frequency series:");
-    for i in 0..FFT_SIZE  {
-        println!("{}: {} {}", i, freq_series[i], freq_series[i].norm());
-    }
+    // println!("Modified Frequency series:");
+    // for i in 0..FFT_SIZE  {
+    //     println!("{}: {} {}", i, freq_series[i], freq_series[i].norm());
+    // }
 
-    ifft.process(&freq_series[..], &mut recovered_time_series[..]);
+    ifft.process(&freq_series[..], &mut phase_shifted[..]);
 
-    println!("Recovered time series:");
-    for i in 0..FFT_SIZE  {
-        println!("{}: {} {}", i, recovered_time_series[i], recovered_time_series[i].norm());
+    // println!("Recovered time series:");
+    // for i in 0..FFT_SIZE  {
+    //     println!("{}: {} {}", i, recovered_time_series[i], recovered_time_series[i].norm());
+    //}
+
+    let scale = FFT_SIZE as f32;
+    for(x) in phase_shifted.iter() {
+        let xSample = x.re / scale;
+        let ySample = x.im / scale;
+        println!("{} {}", xSample, ySample);
     }
 }
 
