@@ -24,8 +24,8 @@ namespace AudioScope
 
         /// <summary>
         /// Length of each vector element passed to main GL program.
-        ///  - X-coord,
-        ///  - Y-coord,
+        ///  - X coordinate,
+        ///  - Y coordinate,
         ///  - Angle,
         ///  - Output.
         /// </summary>
@@ -33,8 +33,8 @@ namespace AudioScope
 
         /// <summary>
         /// Length of each vector element passed to main GL program.
-        ///  - X-coord,
-        ///  - Y-coord,
+        ///  - X coordinate,
+        ///  - Y coordinate,
         /// </summary>
         private const int CLEAR_DATA_STRIDE = 2;
 
@@ -119,8 +119,8 @@ namespace AudioScope
 
             gl.LinkProgram(_clearProg.ShaderProgramObject);
 
-            // Now that we've compiled and linked the shader, check it's link status.If it's not linked properly, we're
-            //  going to throw an exception.
+            // Now that we've compiled and linked the shader, check it's link status. If it's not linked properly, we're
+            // going to throw an exception.
             if (_clearProg.GetLinkStatus(gl) == false)
             {
                 throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link the clear shader program with ID {0}.", _clearProg.ShaderProgramObject), _clearProg.GetInfoLog(gl));
@@ -148,7 +148,7 @@ namespace AudioScope
             int decayID = gl.GetUniformLocation(_prog.ShaderProgramObject, "decay");
             int desaturationID = gl.GetUniformLocation(_prog.ShaderProgramObject, "desaturation");
 
-            gl.Uniform2(windowID, 1024.0f, 768.0f);
+            gl.Uniform2(windowID, (float)this.openGLControl1.Width, (float)this.openGLControl1.Height);
             gl.Uniform1(nID, 5);
             gl.Uniform1(thicknessID, 10.0f);
             gl.Uniform1(minThicknessID, 1.5f);

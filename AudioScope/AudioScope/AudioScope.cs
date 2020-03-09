@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -52,9 +53,9 @@ namespace AudioScope
         public const int CIRCULAR_BUFFER_SAMPLES = 3;
         public const float CUTOFF_FREQ = 0.5f;
 
+        private const int MAX_OUTPUT_QUEUE_SIZE = 20;
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 30;
 
-        //private static readonly WaveFormat _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 1);
         private static readonly WaveFormat _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, NUM_CHANNELS);
 
         private WaveInEvent _waveInEvent;
@@ -72,9 +73,7 @@ namespace AudioScope
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
 
-        private float _simulationFreq = 440.0f;
-
-        private static float[] _data = new float[BUFFER_SIZE * 4];
+        private static ConcurrentQueue<float[]> _data = new ConcurrentQueue<float[]>();
 
         public AudioScope()
         {
@@ -92,7 +91,14 @@ namespace AudioScope
 
         public float[] GetSample()
         {
-            return _data;
+            if(_data.TryDequeue(out var outputSample))
+            {
+                return outputSample;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void InitAudio(AudioSourceEnum audioSource)
@@ -174,9 +180,16 @@ namespace AudioScope
         {
             float[] sample = new float[BUFFER_SIZE];
 
+            double simulationFreq = 440.0;
+
+            if(DateTime.Now.Second % 2 == 0)
+            {
+                simulationFreq = 880.0;
+            }
+
             for (int i = 0; i < sample.Length; i++)
             {
-                double val = 2.0f * Math.PI * 3 * ((double)i / (double)_simulationFreq);
+                double val = 2.0f * Math.PI * 3 * ((double)i / simulationFreq);
                 double re = Math.Sin(val);
                 sample[i] = (float)re;
             }
@@ -217,6 +230,7 @@ namespace AudioScope
             float scale = (float)FFT_SIZE;// / 64;
 
             var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
+            var data = new float[BUFFER_SIZE * 4];
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
             {
@@ -227,11 +241,18 @@ namespace AudioScope
                 //_prevDiff = diff;
                 //var output = _lowpass.ProcessSample(angle);
 
-                _data[k * 4] = (float)(complexAnalyticBuffer[k].Real / scale);
-                _data[k * 4 + 1] = (float)(complexAnalyticBuffer[k].Imaginary / scale);
-                _data[k * 4 + 2] = 0.75f; //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
-                _data[k * 4 + 3] = 0; //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
+                data[k * 4] = (float)(complexAnalyticBuffer[k].Real / scale);
+                data[k * 4 + 1] = (float)(complexAnalyticBuffer[k].Imaginary / scale);
+                data[k * 4 + 2] = 0.75f; //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
+                data[k * 4 + 3] = 0; //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
             }
+
+            while(_data.Count >= MAX_OUTPUT_QUEUE_SIZE)
+            {
+                _data.TryDequeue(out _);
+            }
+
+            _data.Enqueue(data);
 
             //for (int k = 0; k < _data.Length; k += 4)
             //{
