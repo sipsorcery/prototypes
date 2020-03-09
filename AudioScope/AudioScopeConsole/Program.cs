@@ -10,7 +10,7 @@ namespace AudioScope
             Console.WriteLine("Audio Scope");
 
             AudioScope audioScope = new AudioScope();
-            audioScope.InitAudio();
+            audioScope.InitAudio(AudioSourceEnum.Simulation);
             audioScope.Start();
 
             Console.ReadLine();

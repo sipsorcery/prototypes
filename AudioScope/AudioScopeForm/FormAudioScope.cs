@@ -19,11 +19,29 @@ namespace AudioScope
         private const string VERTEX_SHADER_PATH = "shaders/line/line.vert";
         private const string FRAGMENT_SHADER_PATH = "shaders/line/line.frag";
         private const string GEOMETRY_SHADER_PATH = "shaders/line/line.geom";
+        private const string CLEAR_VERTEX_SHADER_PATH = "shaders/clear/clear.vert";
+        private const string CLEAR_FRAGMENT_SHADER_PATH = "shaders/clear/clear.frag";
+
+        /// <summary>
+        /// Length of each vector element passed to main GL program.
+        ///  - X-coord,
+        ///  - Y-coord,
+        ///  - Angle,
+        ///  - Output.
+        /// </summary>
+        private const int MAIN_DATA_STRIDE = 4;
+
+        /// <summary>
+        /// Length of each vector element passed to main GL program.
+        ///  - X-coord,
+        ///  - Y-coord,
+        /// </summary>
+        private const int CLEAR_DATA_STRIDE = 2;
 
         private AudioScope _audioScope = new AudioScope();
         private SharpGL.Shaders.ShaderProgram _prog;
-        private List<float[]> _dump;
-        private int _dumpIndex = 0;
+        private SharpGL.Shaders.ShaderProgram _clearProg;
+        private float[] _clearRectangle;
 
         public FormAudioScope()
         {
@@ -32,33 +50,16 @@ namespace AudioScope
 
         private void FormAudioScope_Load(object sender, EventArgs e)
         {
-            _audioScope.InitAudio();
+            _audioScope.InitAudio(AudioSourceEnum.Simulation);
+            //_audioScope.InitAudio(AudioSourceEnum.NAudio);
             _audioScope.Start();
-
-            //_dump = new List<float[]>();
-
-            //using (StreamReader sr = new StreamReader("dump.txt"))
-            //{
-            //    while (!sr.EndOfStream)
-            //    {
-            //        var line = sr.ReadLine();
-            //        var fields = line.Split(',');
-            //        List<float> samples = new List<float>();
-            //        foreach (var field in fields)
-            //        {
-            //            if (!String.IsNullOrEmpty(field.Trim()))
-            //            {
-            //                samples.Add(float.Parse(field));
-            //            }
-            //        }
-            //        _dump.Add(samples.ToArray());
-            //    }
-            //}
         }
 
         private void OpenGLControl_OpenGLInitialized(object sender, EventArgs e)
         {
             OpenGL gl = this.openGLControl1.OpenGL;
+
+            #region Load the main program.
 
             string fragmentShaderCode = null;
             using (StreamReader sr = new StreamReader(FRAGMENT_SHADER_PATH))
@@ -96,6 +97,38 @@ namespace AudioScope
             {
                 throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link shader program with ID {0}.", _prog.ShaderProgramObject), _prog.GetInfoLog(gl));
             }
+
+            #endregion
+
+            #region Load clear program.
+
+            string clearFragShaderCode = null;
+            using (StreamReader sr = new StreamReader(CLEAR_FRAGMENT_SHADER_PATH))
+            {
+                clearFragShaderCode = sr.ReadToEnd();
+            }
+
+            string clearVertexShaderCode = null;
+            using (StreamReader sr = new StreamReader(CLEAR_VERTEX_SHADER_PATH))
+            {
+                clearVertexShaderCode = sr.ReadToEnd();
+            }
+
+            _clearProg = new SharpGL.Shaders.ShaderProgram();
+            _clearProg.Create(gl, clearVertexShaderCode, clearFragShaderCode, null);
+
+            gl.LinkProgram(_clearProg.ShaderProgramObject);
+
+            // Now that we've compiled and linked the shader, check it's link status.If it's not linked properly, we're
+            //  going to throw an exception.
+            if (_clearProg.GetLinkStatus(gl) == false)
+            {
+                throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link the clear shader program with ID {0}.", _clearProg.ShaderProgramObject), _clearProg.GetInfoLog(gl));
+            }
+
+            _clearRectangle = new float[] { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };
+
+            #endregion
         }
 
         private void openGLControl1_OpenGLDraw(object sender, RenderEventArgs e)
@@ -104,8 +137,6 @@ namespace AudioScope
             OpenGL gl = this.openGLControl1.OpenGL;
 
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);  // Clear The Screen And The Depth Buffer
-
-            gl.UseProgram(_prog.ShaderProgramObject);
 
             int windowID = gl.GetUniformLocation(_prog.ShaderProgramObject, "window");
             int nID = gl.GetUniformLocation(_prog.ShaderProgramObject, "n");
@@ -127,14 +158,28 @@ namespace AudioScope
             gl.Uniform1(decayID, 0.3f);
             gl.Uniform1(desaturationID, 0.1f);
 
+            // Run the clear program.
+            gl.UseProgram(_clearProg.ShaderProgramObject);
+
+            VertexBuffer clearVertexBuffer = new VertexBuffer();
+            clearVertexBuffer.Create(gl);
+            clearVertexBuffer.Bind(gl);
+            clearVertexBuffer.SetData(gl, 0, _clearRectangle, false, CLEAR_DATA_STRIDE);
+
+            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _clearRectangle.Length);
+
+            // Attempt to get an available audio sample.
             var data = _audioScope.GetSample();
 
             if (data != null)
             {
+                // Run the main program.
+                gl.UseProgram(_prog.ShaderProgramObject);
+
                 VertexBuffer vertexBuffer = new VertexBuffer();
                 vertexBuffer.Create(gl);
                 vertexBuffer.Bind(gl);
-                vertexBuffer.SetData(gl, 0, data, false, 4);
+                vertexBuffer.SetData(gl, 0, data, false, MAIN_DATA_STRIDE);
 
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
             }

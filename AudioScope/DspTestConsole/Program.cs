@@ -7,8 +7,8 @@ namespace DspTestCore
 {
     class Program
     {
-        private const int FFT_SIZE = 4;
-        private const int TIME_SERIES_SAMPLES = 4;
+        private const int FFT_SIZE = 1024;
+        private const int TIME_SERIES_SAMPLES = 1;
 
         static void Main(string[] args)
         {
@@ -20,7 +20,7 @@ namespace DspTestCore
                 n -= 1;
             }
 
-           Console.WriteLine($"n={n}.");
+            Console.WriteLine($"n={n}.");
 
             var analytic = MakeAnalytic(n, FFT_SIZE);
 
@@ -79,14 +79,15 @@ namespace DspTestCore
                 //    Console.WriteLine($"{j}: {buffer[j]} {buffer[j].Magnitude}");
                 //}
 
-                foreach(var val in buffer)
+                int count = 0;
+                foreach (var val in buffer)
                 {
                     float xSample = (float)(val.Real / FFT_SIZE);
                     float ySample = (float)(val.Imaginary / FFT_SIZE);
 
-                    Console.Write($"{xSample} {ySample},");
+                    Console.WriteLine($"{count}: {xSample} {ySample}");
+                    count++;
                 }
-                Console.WriteLine();
             }
         }
 

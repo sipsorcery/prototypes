@@ -4,7 +4,7 @@ extern crate rustfft;
 use num::complex::Complex;
 use rustfft::FFT;
 
-const FFT_SIZE: usize = 4;
+const FFT_SIZE: usize = 1024;
 
 fn main() {
     println!("Rust Fft Test");
@@ -58,10 +58,12 @@ fn main() {
     //}
 
     let scale = FFT_SIZE as f32;
+    let mut count: i32 = 0;
     for(x) in phase_shifted.iter() {
         let xSample = x.re / scale;
         let ySample = x.im / scale;
-        println!("{} {}", xSample, ySample);
+        println!("{}: {} {}", count, xSample, ySample);
+        count += 1;
     }
 }
 
