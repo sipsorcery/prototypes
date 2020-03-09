@@ -53,7 +53,7 @@ namespace AudioScope
         public const int CIRCULAR_BUFFER_SAMPLES = 3;
         public const float CUTOFF_FREQ = 0.5f;
 
-        private const int MAX_OUTPUT_QUEUE_SIZE = 20;
+        //private const int MAX_OUTPUT_QUEUE_SIZE = 20;
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 30;
 
         private static readonly WaveFormat _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, NUM_CHANNELS);
@@ -63,6 +63,7 @@ namespace AudioScope
         private PortAudioSharp.Stream _audStm;
         private Timer _simulationTrigger;
         private int _simulationPeriodMilli;
+        private DateTime _simulationStartTime;
 
         private Complex[] _analytic;
         private MathNet.Filtering.OnlineFilter _lowpass;
@@ -72,8 +73,10 @@ namespace AudioScope
         private int _timeIndex = 0;
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
+        private float[] _previousResults = new float[3 * 4];
 
-        private static ConcurrentQueue<float[]> _data = new ConcurrentQueue<float[]>();
+        //private static ConcurrentQueue<float[]> _data = new ConcurrentQueue<float[]>();
+        private static float[] _lastSample;
 
         public AudioScope()
         {
@@ -91,14 +94,15 @@ namespace AudioScope
 
         public float[] GetSample()
         {
-            if(_data.TryDequeue(out var outputSample))
-            {
-                return outputSample;
-            }
-            else
-            {
-                return null;
-            }
+            //if(_data.TryDequeue(out var outputSample))
+            //{
+            //    _lastSample = outputSample;
+            //    return outputSample;
+            //}
+            //else
+            //{
+                return _lastSample;
+            //}
         }
 
         public void InitAudio(AudioSourceEnum audioSource)
@@ -131,7 +135,8 @@ namespace AudioScope
         {
             _waveInEvent?.StartRecording();
             _audStm?.Start();
-            _simulationTrigger.Change(0, _simulationPeriodMilli);
+            _simulationTrigger?.Change(0, _simulationPeriodMilli);
+            _simulationStartTime = DateTime.Now;
         }
 
         public void Stop()
@@ -180,17 +185,28 @@ namespace AudioScope
         {
             float[] sample = new float[BUFFER_SIZE];
 
-            double simulationFreq = 440.0;
+            double freq = 440.0 + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
 
-            if(DateTime.Now.Second % 2 == 0)
-            {
-                simulationFreq = 880.0;
-            }
+            //if(DateTime.Now.Second % 2 == 0)
+            //{
+            //    simulationFreq = 880.0;
+            //}
 
             for (int i = 0; i < sample.Length; i++)
             {
-                double val = 2.0f * Math.PI * 3 * ((double)i / simulationFreq);
-                double re = Math.Sin(val);
+                //for (int j = 1; j < 7; j++)
+                //{
+                //    re += Math.Sin(2.0f * Math.PI * ((double)i / (simulationFreq * j)));
+                //}
+
+                //double re = Math.Sin(2.0f * Math.PI * ((double)i / simulationFreq ));
+
+                //double re = Math.Sin(2 * Math.PI * i / (freq * 3)) +
+                //    Math.Cos(4 * Math.PI * i / (freq * 2)) +
+                //    Math.Cos(7 * Math.PI * i / (freq * 2));
+
+                double re = Math.Sin(2.0f * Math.PI * ((double)i / freq));
+
                 sample[i] = (float)re;
             }
 
@@ -247,12 +263,17 @@ namespace AudioScope
                 data[k * 4 + 3] = 0; //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
             }
 
-            while(_data.Count >= MAX_OUTPUT_QUEUE_SIZE)
-            {
-                _data.TryDequeue(out _);
-            }
+            //while(_data.Count >= MAX_OUTPUT_QUEUE_SIZE)
+            //{
+            //    _data.TryDequeue(out _);
+            //}
 
-            _data.Enqueue(data);
+            //_data.Enqueue(data);
+            var dataList = _previousResults.ToList();
+            dataList.AddRange(data);
+            _lastSample = dataList.ToArray();
+
+            _previousResults = data.Skip(data.Length - 3 * 4).ToArray();
 
             //for (int k = 0; k < _data.Length; k += 4)
             //{
@@ -270,40 +291,6 @@ namespace AudioScope
             var angle = Math.Acos(theta);
             return (float)(angle / (2 * Math.PI));
         }
-
-        //    private Complex32[] MakeAnalytic(uint n, uint m)
-        //    {
-        //        Console.WriteLine($"make_analytic, n={n}, m={m}.");
-
-        //        var impulse = new Complex32[m];
-
-        //        var mid = (n - 1) / 2;
-
-        //        impulse[mid] = new Complex32(1.0f, 0.0f);
-        //        float re = -1.0f / (mid - 1);
-        //        for (int i = 1; i < mid + 1; i++)
-        //        {
-        //            if (i % 2 == 0)
-        //            {
-        //                impulse[mid + i] = new Complex32(re, impulse[mid + i].Imaginary);
-        //                impulse[mid - i] = new Complex32(re, impulse[mid - i].Imaginary);
-        //            }
-        //            else
-        //            {
-        //                float im = (float)(2.0 / Math.PI / i);
-        //                impulse[mid + i] = new Complex32(impulse[mid + i].Real, im);
-        //                impulse[mid - i] = new Complex32(impulse[mid - i].Real, -im);
-        //            }
-        //            // hamming window
-        //            var k = 0.53836 + 0.46164 * Math.Cos(i * Math.PI / (mid + 1));
-        //            impulse[mid + i] = new Complex32((float)(impulse[mid + i].Real * k), (float)(impulse[mid + i].Imaginary * k));
-        //            impulse[mid - i] = new Complex32((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
-        //        }
-
-        //        Fourier.Forward(impulse, FourierOptions.NoScaling);
-
-        //        return impulse;
-        //    }
 
         private static Complex[] MakeAnalytic(uint n, uint m)
         {

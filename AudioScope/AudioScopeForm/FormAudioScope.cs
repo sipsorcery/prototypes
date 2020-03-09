@@ -166,7 +166,7 @@ namespace AudioScope
             clearVertexBuffer.Bind(gl);
             clearVertexBuffer.SetData(gl, 0, _clearRectangle, false, CLEAR_DATA_STRIDE);
 
-            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _clearRectangle.Length);
+            //gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _clearRectangle.Length);
 
             // Attempt to get an available audio sample.
             var data = _audioScope.GetSample();
