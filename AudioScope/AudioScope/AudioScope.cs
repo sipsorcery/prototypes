@@ -38,6 +38,41 @@ namespace AudioScope
         Simulation = 3
     }
 
+    public class LowPassFilter
+    {
+        private readonly float _k;
+        private readonly float _norm;
+        private readonly float _a0;
+        private readonly float _a1;
+        private readonly float _a2;
+        private readonly float _b1;
+        private readonly float _b2;
+        
+        private float _w1 = 0.0f;
+        private float _w2 = 0.0f;
+
+        public LowPassFilter(float n, float q)
+        {
+            _k = (float)Math.Tan((0.5 * n * Math.PI));
+            _norm = 1.0f / (1.0f + _k / q + _k * _k);
+            _a0 = _k * _k * _norm;
+            _a1 = 2.0f * _a0;
+            _a2 = _a0;
+            _b1 = 2.0f * (_k * _k - 1.0f) * _norm;
+            _b2 = (1.0f - _k / q + _k * _k) * _norm;
+        }
+
+        public float Apply(float x)
+        {
+            float w0 = x - _b1 * _w1 - _b2 * _w2;
+            float y = _a0 * w0 + _a1 * _w1 + _a2 * _w2;
+            _w2 = _w1;
+            _w1 = w0;
+
+            return y;
+        }
+    }
+
     public class AudioScope
     {
         public const int NUM_CHANNELS = 1;
@@ -55,6 +90,8 @@ namespace AudioScope
 
         //private const int MAX_OUTPUT_QUEUE_SIZE = 20;
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 30;
+        private const int DISPLAY_ARRAY_STRIDE = 4; // Each element sent to the display function needs to have 4 floats.
+        private const int PREVIOUS_SAMPLES_LENGTH = 3 * DISPLAY_ARRAY_STRIDE;
 
         private static readonly WaveFormat _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, NUM_CHANNELS);
 
@@ -66,17 +103,18 @@ namespace AudioScope
         private DateTime _simulationStartTime;
 
         private Complex[] _analytic;
-        private MathNet.Filtering.OnlineFilter _lowpass;
-        private MathNet.Filtering.OnlineFilter _noiseLowpass;
+        //private MathNet.Filtering.OnlineFilter _lowpass;
+        //private MathNet.Filtering.OnlineFilter _noiseLowpass;
+        private LowPassFilter _angleLowPass;
+        private LowPassFilter _noiseLowPass;
 
         private Complex[] _timeRingBuffer = new Complex[2 * FFT_SIZE];
         private int _timeIndex = 0;
+        private float[] _previousResults = new float[3 * 4];
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
-        private float[] _previousResults = new float[3 * 4];
-
-        //private static ConcurrentQueue<float[]> _data = new ConcurrentQueue<float[]>();
         private static float[] _lastSample;
+        private int _outputSampleCount = 0;
 
         public AudioScope()
         {
@@ -88,21 +126,15 @@ namespace AudioScope
             }
 
             _analytic = MakeAnalytic(n, FFT_SIZE);
-            _lowpass = MathNet.Filtering.OnlineFilter.CreateLowpass(MathNet.Filtering.ImpulseResponse.Infinite, 0.01, 0.5);
-            _noiseLowpass = MathNet.Filtering.OnlineFilter.CreateLowpass(MathNet.Filtering.ImpulseResponse.Infinite, 0.5, 0.7);
+            //_lowpass = MathNet.Filtering.OnlineFilter.CreateLowpass(MathNet.Filtering.ImpulseResponse.Infinite, 0.01, 0.5);
+            //_noiseLowpass = MathNet.Filtering.OnlineFilter.CreateLowpass(MathNet.Filtering.ImpulseResponse.Infinite, 0.5, 0.7);
+            _angleLowPass = new LowPassFilter(0.01f, 0.5f);
+            _noiseLowPass = new LowPassFilter(0.5f, 0.7f);
         }
 
         public float[] GetSample()
         {
-            //if(_data.TryDequeue(out var outputSample))
-            //{
-            //    _lastSample = outputSample;
-            //    return outputSample;
-            //}
-            //else
-            //{
-                return _lastSample;
-            //}
+            return _lastSample;
         }
 
         public void InitAudio(AudioSourceEnum audioSource)
@@ -126,7 +158,7 @@ namespace AudioScope
             }
             else if (audioSource == AudioSourceEnum.Simulation)
             {
-                _simulationPeriodMilli = 1000 * BUFFER_SIZE / SAMPLE_RATE;
+                _simulationPeriodMilli = 1000; // 1000 * BUFFER_SIZE / SAMPLE_RATE;
                 _simulationTrigger = new Timer(GenerateSimulationSample);
             }
         }
@@ -185,7 +217,7 @@ namespace AudioScope
         {
             float[] sample = new float[BUFFER_SIZE];
 
-            double freq = 440.0 + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
+            double freq = 440.0;// + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
 
             //if(DateTime.Now.Second % 2 == 0)
             //{
@@ -218,7 +250,7 @@ namespace AudioScope
         /// </summary>
         private void ProcessAudioInBuffer(float[] samples)
         {
-            Console.WriteLine($"ProcessAudioInBuffer {samples[0]} {samples[63]} {samples[127]} {samples[191]} {samples[255]}, length {samples.Length}.");
+            //Console.WriteLine($"process sample {samples[0]},{samples[1]},{samples[2]},{samples[3]},{samples[4]},{samples[5]},{samples[6]},{samples[7]}");
 
             for (int i = 0; i < samples.Length; i++)
             {
@@ -240,58 +272,69 @@ namespace AudioScope
 
             Fourier.Inverse(freqBuffer, FourierOptions.NoScaling);
 
-            //_analyticBuffer[0] = _analyticBuffer[BUFFER_SIZE];
-            //_analyticBuffer[1] = _analyticBuffer[BUFFER_SIZE + 1];
-            //_analyticBuffer[2] = _analyticBuffer[BUFFER_SIZE + 2];
-            float scale = (float)FFT_SIZE;// / 64;
+            float scale = (float)FFT_SIZE;
 
             var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
-            var data = new float[BUFFER_SIZE * 4];
+            var data = new float[BUFFER_SIZE * DISPLAY_ARRAY_STRIDE + PREVIOUS_SAMPLES_LENGTH];
+
+            //Complex prevInput = new Complex(_previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE], _previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE + 1]);
+            //Complex secondPrevInput = new Complex(_previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2], _previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2 + 1]);
+            //Complex prevDiff = prevInput - secondPrevInput;
+
+            Console.WriteLine($"Output sample {_outputSampleCount}:");
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
             {
-                //var diff = complexAnalyticBuffer[k] - _prevInput;
-                //_prevInput = complexAnalyticBuffer[k];
+                var diff = complexAnalyticBuffer[k] - _prevInput;
+                _prevInput = complexAnalyticBuffer[k];
 
-                //var angle = Math.Max(Math.Log(Math.Abs(GetAngle(diff, _prevDiff)), 2), -1.0e12);
-                //_prevDiff = diff;
-                //var output = _lowpass.ProcessSample(angle);
+                var angle = (float)Math.Max(Math.Log(Math.Abs(GetAngle(diff, _prevDiff)), 2.0f), -1.0e12);
+                _prevDiff = diff;
+                var output = _angleLowPass.Apply(angle);
 
-                data[k * 4] = (float)(complexAnalyticBuffer[k].Real / scale);
-                data[k * 4 + 1] = (float)(complexAnalyticBuffer[k].Imaginary / scale);
-                data[k * 4 + 2] = 0.75f; //(float)Math.Pow(2, angle), // (float)Math.Pow(2, output), // Smoothed angular velocity.
-                data[k * 4 + 3] = 0; //(float)Math.Abs(angle), //(float)_noiseLowpass.ProcessSample(Math.Abs(angle - output)) // Average angular noise.
+                //Console.WriteLine($"angle {angle}.");
+
+                data[k * DISPLAY_ARRAY_STRIDE] = (float)(complexAnalyticBuffer[k].Real / scale);
+                data[k * DISPLAY_ARRAY_STRIDE + 1] = (float)(complexAnalyticBuffer[k].Imaginary / scale);
+                data[k * DISPLAY_ARRAY_STRIDE + 2] = (float)Math.Pow(2, output); // Smoothed angular velocity.
+                data[k * DISPLAY_ARRAY_STRIDE + 3] = _noiseLowPass.Apply((float)Math.Abs(angle - output)); // Average angular noise.
+
+                //Console.WriteLine($"{ data[k * DISPLAY_ARRAY_STRIDE]},{data[k * DISPLAY_ARRAY_STRIDE + 1] },angle={angle},{data[k * DISPLAY_ARRAY_STRIDE + 2] },{data[k * DISPLAY_ARRAY_STRIDE + 3] }");
             }
 
-            //while(_data.Count >= MAX_OUTPUT_QUEUE_SIZE)
-            //{
-            //    _data.TryDequeue(out _);
-            //}
+            Array.Copy(_previousResults, 0, data, 0, PREVIOUS_SAMPLES_LENGTH);
+            _lastSample = data;
+            _outputSampleCount++;
 
-            //_data.Enqueue(data);
-            var dataList = _previousResults.ToList();
-            dataList.AddRange(data);
-            _lastSample = dataList.ToArray();
-
-            _previousResults = data.Skip(data.Length - 3 * 4).ToArray();
-
-            //for (int k = 0; k < _data.Length; k += 4)
-            //{
-            //    Console.WriteLine($"{k / 4}: {_data[k + 0]} {_data[k + 1]}");
-            //}
-
-            //Console.WriteLine("Sample ready.");
+            _previousResults = data.Skip(data.Length - PREVIOUS_SAMPLES_LENGTH).ToArray();
         }
 
         // Angle between two complex numbers scaled into [0, 0.5].
-        public static float GetAngle(Complex32 u, Complex32 v)
-        {
-            var lenProduct = u.Magnitude * v.Magnitude;
-            var theta = (u.Real * v.Real - u.Imaginary * v.Imaginary) / lenProduct;
-            var angle = Math.Acos(theta);
-            return (float)(angle / (2 * Math.PI));
-        }
+        //public static float GetAngle(Complex u, Complex v)
+        //{
+        //    var lenProduct = u.Magnitude * v.Magnitude;
+        //    if (lenProduct > 0)
+        //    {
+        //        var theta = (u.Real * v.Real - u.Imaginary * v.Imaginary) / lenProduct;
+        //        var angle = Math.Acos(theta);
+        //        return (float)(angle / (2 * Math.PI));
+        //    }
+        //    else
+        //    {
+        //        return 0;
+        //    }
+        //}
 
+        public static float GetAngle(Complex v, Complex u)
+        {
+            var len_v_mul_u = v.Norm() * u;
+            var len_u_mul_v = u.Norm() * v;
+            var left = (len_v_mul_u - len_u_mul_v).Norm();
+            var right = (len_v_mul_u + len_u_mul_v).Norm();
+
+            return (float)(Math.Atan2(left, right) / Math.PI);
+        }
+         
         private static Complex[] MakeAnalytic(uint n, uint m)
         {
             Console.WriteLine($"MakeAnalytic n={n}, m={m}.");
@@ -321,17 +364,7 @@ namespace AudioScope
                 impulse[mid - i] = new Complex((float)(impulse[mid - i].Real * k), (float)(impulse[mid - i].Imaginary * k));
             }
 
-            //for (int i=0; i<m; i++)
-            //{
-            //    Console.WriteLine($"{i}:{impulse[i]}");
-            //}
-
             Fourier.Forward(impulse, FourierOptions.NoScaling);
-
-            //for (int i = 0; i < m; i++)
-            //{
-            //    Console.WriteLine($"{i}:{impulse[i]}");
-            //}
 
             return impulse;
         }

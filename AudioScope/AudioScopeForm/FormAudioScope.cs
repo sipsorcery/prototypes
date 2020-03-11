@@ -50,8 +50,9 @@ namespace AudioScope
 
         private void FormAudioScope_Load(object sender, EventArgs e)
         {
-            _audioScope.InitAudio(AudioSourceEnum.Simulation);
+            //_audioScope.InitAudio(AudioSourceEnum.Simulation);
             //_audioScope.InitAudio(AudioSourceEnum.NAudio);
+            _audioScope.InitAudio(AudioSourceEnum.PortAudio);
             _audioScope.Start();
         }
 
@@ -150,7 +151,7 @@ namespace AudioScope
 
             gl.Uniform2(windowID, (float)this.openGLControl1.Width, (float)this.openGLControl1.Height);
             gl.Uniform1(nID, 5);
-            gl.Uniform1(thicknessID, 10.0f);
+            gl.Uniform1(thicknessID, 5.0f);
             gl.Uniform1(minThicknessID, 1.5f);
             gl.Uniform1(thinningID, 0.05f);
             gl.Uniform1(baseHueID, 0.0f);
