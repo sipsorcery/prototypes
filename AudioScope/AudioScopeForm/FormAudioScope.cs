@@ -6,6 +6,8 @@ namespace AudioScope
 {
     public partial class FormAudioScope : Form
     {
+        private const string MUSIC_FILE_PATH = "media/Macroform_-_Simplicity.ulaw";
+
         private AudioScope _audioScope;
         private AudioScopeOpenGL _audioScopeGL;
 
@@ -20,8 +22,9 @@ namespace AudioScope
         private void FormAudioScope_Load(object sender, EventArgs e)
         {
             //_audioScope.InitAudio(AudioSourceEnum.Simulation);
-            _audioScope.InitAudio(AudioSourceEnum.NAudio);
+            //_audioScope.InitAudio(AudioSourceEnum.NAudio);
             //_audioScope.InitAudio(AudioSourceEnum.PortAudio);
+            _audioScope.InitAudio(MUSIC_FILE_PATH);
             _audioScope.Start();
         }
 

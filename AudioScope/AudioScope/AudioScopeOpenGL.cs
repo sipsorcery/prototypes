@@ -88,31 +88,31 @@ namespace AudioScope
 
             #region Load clear program.
 
-            string clearFragShaderCode = null;
-            using (StreamReader sr = new StreamReader(CLEAR_FRAGMENT_SHADER_PATH))
-            {
-                clearFragShaderCode = sr.ReadToEnd();
-            }
+            //string clearFragShaderCode = null;
+            //using (StreamReader sr = new StreamReader(CLEAR_FRAGMENT_SHADER_PATH))
+            //{
+            //    clearFragShaderCode = sr.ReadToEnd();
+            //}
 
-            string clearVertexShaderCode = null;
-            using (StreamReader sr = new StreamReader(CLEAR_VERTEX_SHADER_PATH))
-            {
-                clearVertexShaderCode = sr.ReadToEnd();
-            }
+            //string clearVertexShaderCode = null;
+            //using (StreamReader sr = new StreamReader(CLEAR_VERTEX_SHADER_PATH))
+            //{
+            //    clearVertexShaderCode = sr.ReadToEnd();
+            //}
 
-            _clearProg = new SharpGL.Shaders.ShaderProgram();
-            _clearProg.Create(gl, clearVertexShaderCode, clearFragShaderCode, null);
+            //_clearProg = new SharpGL.Shaders.ShaderProgram();
+            //_clearProg.Create(gl, clearVertexShaderCode, clearFragShaderCode, null);
 
-            gl.LinkProgram(_clearProg.ShaderProgramObject);
+            //gl.LinkProgram(_clearProg.ShaderProgramObject);
 
-            // Now that we've compiled and linked the shader, check it's link status. If it's not linked properly, we're
-            // going to throw an exception.
-            if (_clearProg.GetLinkStatus(gl) == false)
-            {
-                throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link the clear shader program with ID {0}.", _clearProg.ShaderProgramObject), _clearProg.GetInfoLog(gl));
-            }
+            //// Now that we've compiled and linked the shader, check it's link status. If it's not linked properly, we're
+            //// going to throw an exception.
+            //if (_clearProg.GetLinkStatus(gl) == false)
+            //{
+            //    throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link the clear shader program with ID {0}.", _clearProg.ShaderProgramObject), _clearProg.GetInfoLog(gl));
+            //}
 
-            _clearRectangle = new float[] { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };
+            //_clearRectangle = new float[] { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };
 
             #endregion
         }
@@ -142,12 +142,12 @@ namespace AudioScope
             gl.Uniform1(desaturationID, 0.1f);
 
             // Run the clear program.
-            gl.UseProgram(_clearProg.ShaderProgramObject);
+            //gl.UseProgram(_clearProg.ShaderProgramObject);
 
-            VertexBuffer clearVertexBuffer = new VertexBuffer();
-            clearVertexBuffer.Create(gl);
-            clearVertexBuffer.Bind(gl);
-            clearVertexBuffer.SetData(gl, 0, _clearRectangle, false, CLEAR_DATA_STRIDE);
+            //VertexBuffer clearVertexBuffer = new VertexBuffer();
+            //clearVertexBuffer.Create(gl);
+            //clearVertexBuffer.Bind(gl);
+            //clearVertexBuffer.SetData(gl, 0, _clearRectangle, false, CLEAR_DATA_STRIDE);
 
             //gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _clearRectangle.Length);
 
@@ -165,6 +165,8 @@ namespace AudioScope
                 vertexBuffer.SetData(gl, 0, data, false, MAIN_DATA_STRIDE);
 
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
+
+                vertexBuffer.Unbind(gl);
             }
         }
     }

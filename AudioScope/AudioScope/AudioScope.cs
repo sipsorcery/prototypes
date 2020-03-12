@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -37,6 +38,7 @@ namespace AudioScope
         //PortAudio = 1,
         Simulation = 2,
         External = 3,
+        AudioFile = 4,
     }
 
     public class LowPassFilter
@@ -102,6 +104,8 @@ namespace AudioScope
         private Timer _simulationTrigger;
         private int _simulationPeriodMilli;
         private DateTime _simulationStartTime;
+        private StreamReader _audioStreamReader;
+        private Timer _audioStreamTimer;
 
         private Complex[] _analytic;
         //private MathNet.Filtering.OnlineFilter _lowpass;
@@ -109,13 +113,14 @@ namespace AudioScope
         private LowPassFilter _angleLowPass;
         private LowPassFilter _noiseLowPass;
 
-        private Complex[] _timeRingBuffer = new Complex[2 * FFT_SIZE];
-        private int _timeIndex = 0;
         private float[] _previousResults = new float[3 * 4];
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
         private float[] _lastSample;
         private int _outputSampleCount = 0;
+
+        private Complex[] _currSample = new Complex[FFT_SIZE];
+        private Complex[] _prevSample = new Complex[FFT_SIZE];
 
         public AudioScope()
         {
@@ -164,12 +169,31 @@ namespace AudioScope
             }
         }
 
+        public void InitAudio(string audioFilePath)
+        {
+            // Check whether this is the initial load or whether the source file is the same. If it is there's no need to do anything.
+            if (File.Exists(audioFilePath))
+            {
+                //Log.LogWarning($"The requested audio source file could not be found {newAudioFile}, falling back to default.");
+                _audioStreamReader = new StreamReader(audioFilePath);
+            }
+            else
+            {
+                //Log.LogError($"The requested audio source file could not be found {audioFilePath}, no audio source will be initialised.");
+            }
+        }
+
         public void Start()
         {
             _waveInEvent?.StartRecording();
             //_audStm?.Start();
             _simulationTrigger?.Change(0, _simulationPeriodMilli);
             _simulationStartTime = DateTime.Now;
+
+            if (_audioStreamReader != null)
+            {
+                _audioStreamTimer = new Timer(GetMusicSample, null, 0, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
+            }
         }
 
         public void Stop()
@@ -261,6 +285,32 @@ namespace AudioScope
             ProcessSample(sample);
         }
 
+        private void GetMusicSample(object state)
+        {
+            byte[] sample = new byte[BUFFER_SIZE];
+            int bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
+
+            if (bytesRead == 0 || _audioStreamReader.EndOfStream)
+            {
+                _audioStreamReader.BaseStream.Position = 0;
+                bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
+            }
+
+            if (sample.Length > 0)
+            {
+                Complex[] ieeeSamples = new Complex[sample.Length];
+
+                for (int index = 0; index < sample.Length; index++)
+                {
+                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
+                    ieeeSamples[index] = pcm / 32768f;
+                }
+
+                ProcessSample(ieeeSamples.ToArray());
+            }
+        }
+
         /// <summary>
         /// Called to process the audio input once the required number of samples are available.
         /// </summary>
@@ -275,32 +325,42 @@ namespace AudioScope
             //    _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
             //}
 
-            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length);
-            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length);
+            //Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length);
+            //Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length);
+            //_timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
+            //var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
 
-            _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
-
-            var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
-
-            Fourier.Forward(freqBuffer, FourierOptions.NoScaling);
-
-            for (int j = 0; j < freqBuffer.Length; j++)
+            if (samples.Length >= FFT_SIZE)
             {
-                freqBuffer[j] = freqBuffer[j] * _analytic[j];
+                Array.Copy(samples, 0, _currSample, 0, FFT_SIZE);
+            }
+            else
+            {
+                Array.Copy(samples, 0, _currSample, 0, samples.Length);
+                Array.Copy(_prevSample, 0, _currSample, samples.Length, FFT_SIZE - samples.Length);
             }
 
-            Fourier.Inverse(freqBuffer, FourierOptions.NoScaling);
+            Array.Copy(_currSample, 0, _prevSample, 0, FFT_SIZE);
+
+            Fourier.Forward(_currSample, FourierOptions.NoScaling);
+
+            for (int j = 0; j < _currSample.Length; j++)
+            {
+                _currSample[j] = _currSample[j] * _analytic[j];
+            }
+
+            Fourier.Inverse(_currSample, FourierOptions.NoScaling);
 
             float scale = (float)FFT_SIZE;
 
-            var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
+            var complexAnalyticBuffer = _currSample.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
             var data = new float[BUFFER_SIZE * DISPLAY_ARRAY_STRIDE + PREVIOUS_SAMPLES_LENGTH];
 
             //Complex prevInput = new Complex(_previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE], _previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE + 1]);
             //Complex secondPrevInput = new Complex(_previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2], _previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2 + 1]);
             //Complex prevDiff = prevInput - secondPrevInput;
 
-            Console.WriteLine($"Output sample {_outputSampleCount}:");
+            //Console.WriteLine($"Output sample {_outputSampleCount}:");
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
             {
