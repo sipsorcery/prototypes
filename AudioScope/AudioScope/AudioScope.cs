@@ -27,15 +27,16 @@ using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
 using NAudio.Utils;
 using NAudio.Wave;
-using PortAudioSharp;
+//using PortAudioSharp;
 
 namespace AudioScope
 {
     public enum AudioSourceEnum
     {
         NAudio = 0,
-        PortAudio = 1,
-        Simulation = 3
+        //PortAudio = 1,
+        Simulation = 2,
+        External = 3,
     }
 
     public class LowPassFilter
@@ -47,7 +48,7 @@ namespace AudioScope
         private readonly float _a2;
         private readonly float _b1;
         private readonly float _b2;
-        
+
         private float _w1 = 0.0f;
         private float _w2 = 0.0f;
 
@@ -97,7 +98,7 @@ namespace AudioScope
 
         private WaveInEvent _waveInEvent;
         private CircularBuffer _audioInBuffer;
-        private PortAudioSharp.Stream _audStm;
+        //private PortAudioSharp.Stream _audStm;
         private Timer _simulationTrigger;
         private int _simulationPeriodMilli;
         private DateTime _simulationStartTime;
@@ -113,7 +114,7 @@ namespace AudioScope
         private float[] _previousResults = new float[3 * 4];
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
-        private static float[] _lastSample;
+        private float[] _lastSample;
         private int _outputSampleCount = 0;
 
         public AudioScope()
@@ -150,12 +151,12 @@ namespace AudioScope
                 _waveInEvent.WaveFormat = _waveFormat;
                 _waveInEvent.DataAvailable += NAudioDataAvailable;
             }
-            else if (audioSource == AudioSourceEnum.PortAudio)
-            {
-                PortAudio.Initialize();
-                StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = NUM_CHANNELS, sampleFormat = SampleFormat.Float32 };
-                _audStm = new Stream(stmInParams, null, SAMPLE_RATE, BUFFER_SIZE, StreamFlags.NoFlag, PortAudioInCallback, null);
-            }
+            //else if (audioSource == AudioSourceEnum.PortAudio)
+            //{
+            //    PortAudio.Initialize();
+            //    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = NUM_CHANNELS, sampleFormat = SampleFormat.Float32 };
+            //    _audStm = new Stream(stmInParams, null, SAMPLE_RATE, BUFFER_SIZE, StreamFlags.NoFlag, PortAudioInCallback, null);
+            //}
             else if (audioSource == AudioSourceEnum.Simulation)
             {
                 _simulationPeriodMilli = 1000; // 1000 * BUFFER_SIZE / SAMPLE_RATE;
@@ -166,7 +167,7 @@ namespace AudioScope
         public void Start()
         {
             _waveInEvent?.StartRecording();
-            _audStm?.Start();
+            //_audStm?.Start();
             _simulationTrigger?.Change(0, _simulationPeriodMilli);
             _simulationStartTime = DateTime.Now;
         }
@@ -174,43 +175,58 @@ namespace AudioScope
         public void Stop()
         {
             _waveInEvent?.StopRecording();
-            _audStm?.Stop();
+            //_audStm?.Stop();
             _simulationTrigger?.Dispose();
         }
 
-        private StreamCallbackResult PortAudioInCallback(IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
-        {
-            Console.WriteLine($"AudioInCallback frame count {frameCount}.");
+        //private StreamCallbackResult PortAudioInCallback(IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
+        //{
+        //    Console.WriteLine($"AudioInCallback frame count {frameCount}.");
 
-            float[] samples = new float[frameCount];
-            Marshal.Copy(input, samples, 0, (int)frameCount);
+        //    float[] samples = new float[frameCount];
+        //    Marshal.Copy(input, samples, 0, (int)frameCount);
 
-            ProcessAudioInBuffer(samples);
+        //    ProcessAudioInBuffer(samples);
 
-            return StreamCallbackResult.Continue;
-        }
+        //    return StreamCallbackResult.Continue;
+        //}
 
         /// <summary>
         /// Event handler for audio sample being supplied by local capture device.
         /// </summary>
         private void NAudioDataAvailable(object sender, WaveInEventArgs args)
         {
-            _audioInBuffer.Write(args.Buffer, 0, args.BytesRecorded);
-            while (_audioInBuffer.Count > (BUFFER_SIZE * 4))
+            //_audioInBuffer.Write(args.Buffer, 0, args.BytesRecorded);
+            //while (_audioInBuffer.Count > (BUFFER_SIZE * 4))
+            //{
+            //    int bytesPerSample = _waveFormat.BlockAlign;
+
+            //    byte[] buffer = new byte[BUFFER_SIZE * bytesPerSample];
+            //    _audioInBuffer.Read(buffer, 0, BUFFER_SIZE * bytesPerSample);
+
+            //    List<float> samples = new List<float>();
+            //    for (int i = 0; i < BUFFER_SIZE * bytesPerSample; i += bytesPerSample)
+            //    {
+            //        samples.Add(BitConverter.ToSingle(buffer, i));
+            //    }
+
+            //    ProcessAudioInBuffer(samples.ToArray());
+            //}
+
+            int bytesPerSample = _waveFormat.BlockAlign;
+            List<float> samples = new List<float>();
+            for (int i = 0; i < args.BytesRecorded; i += bytesPerSample)
             {
-                int bytesPerSample = _waveFormat.BlockAlign;
+                samples.Add(BitConverter.ToSingle(args.Buffer, i));
 
-                byte[] buffer = new byte[BUFFER_SIZE * bytesPerSample];
-                _audioInBuffer.Read(buffer, 0, BUFFER_SIZE * bytesPerSample);
-
-                List<float> samples = new List<float>();
-                for (int i = 0; i < BUFFER_SIZE * bytesPerSample; i += bytesPerSample)
+                if(samples.Count >= BUFFER_SIZE)
                 {
-                    samples.Add(BitConverter.ToSingle(buffer, i));
+                    // It's more important that we keep up compared to dropping samples.
+                    break;
                 }
-
-                ProcessAudioInBuffer(samples.ToArray());
             }
+
+            ProcessAudioInBuffer(samples.ToArray());
         }
 
         private void GenerateSimulationSample(Object userState)
@@ -259,7 +275,7 @@ namespace AudioScope
                 _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
             }
 
-            _timeIndex = (_timeIndex + BUFFER_SIZE) % FFT_SIZE;
+            _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
 
             var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
 
@@ -334,7 +350,7 @@ namespace AudioScope
 
             return (float)(Math.Atan2(left, right) / Math.PI);
         }
-         
+
         private static Complex[] MakeAnalytic(uint n, uint m)
         {
             Console.WriteLine($"MakeAnalytic n={n}, m={m}.");
