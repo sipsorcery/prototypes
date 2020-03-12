@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 using SharpGL;
 
@@ -24,8 +19,8 @@ namespace AudioScope
 
         private void FormAudioScope_Load(object sender, EventArgs e)
         {
-            _audioScope.InitAudio(AudioSourceEnum.Simulation);
-            //_audioScope.InitAudio(AudioSourceEnum.NAudio);
+            //_audioScope.InitAudio(AudioSourceEnum.Simulation);
+            _audioScope.InitAudio(AudioSourceEnum.NAudio);
             //_audioScope.InitAudio(AudioSourceEnum.PortAudio);
             _audioScope.Start();
         }

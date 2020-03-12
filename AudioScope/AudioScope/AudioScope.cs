@@ -97,7 +97,7 @@ namespace AudioScope
         private static readonly WaveFormat _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SAMPLE_RATE, NUM_CHANNELS);
 
         private WaveInEvent _waveInEvent;
-        private CircularBuffer _audioInBuffer;
+        //private CircularBuffer _audioInBuffer;
         //private PortAudioSharp.Stream _audStm;
         private Timer _simulationTrigger;
         private int _simulationPeriodMilli;
@@ -142,7 +142,7 @@ namespace AudioScope
         {
             if (audioSource == AudioSourceEnum.NAudio)
             {
-                _audioInBuffer = new CircularBuffer(BUFFER_SIZE * _waveFormat.BlockAlign * CIRCULAR_BUFFER_SAMPLES);
+                //_audioInBuffer = new CircularBuffer(BUFFER_SIZE * _waveFormat.BlockAlign * CIRCULAR_BUFFER_SAMPLES);
 
                 _waveInEvent = new WaveInEvent();
                 _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
@@ -214,24 +214,24 @@ namespace AudioScope
             //}
 
             int bytesPerSample = _waveFormat.BlockAlign;
-            List<float> samples = new List<float>();
+            List<Complex> samples = new List<Complex>();
             for (int i = 0; i < args.BytesRecorded; i += bytesPerSample)
             {
                 samples.Add(BitConverter.ToSingle(args.Buffer, i));
 
-                if(samples.Count >= BUFFER_SIZE)
-                {
-                    // It's more important that we keep up compared to dropping samples.
-                    break;
-                }
+                //if(samples.Count >= BUFFER_SIZE)
+                //{
+                //    // It's more important that we keep up compared to dropping samples.
+                //    break;
+                //}
             }
 
-            ProcessAudioInBuffer(samples.ToArray());
+            ProcessSample(samples.ToArray());
         }
 
         private void GenerateSimulationSample(Object userState)
         {
-            float[] sample = new float[BUFFER_SIZE];
+            Complex[] sample = new Complex[BUFFER_SIZE];
 
             double freq = 440.0;// + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
 
@@ -258,22 +258,25 @@ namespace AudioScope
                 sample[i] = (float)re;
             }
 
-            ProcessAudioInBuffer(sample);
+            ProcessSample(sample);
         }
 
         /// <summary>
         /// Called to process the audio input once the required number of samples are available.
         /// </summary>
-        private void ProcessAudioInBuffer(float[] samples)
+        public void ProcessSample(Complex[] samples)
         {
             //Console.WriteLine($"process sample {samples[0]},{samples[1]},{samples[2]},{samples[3]},{samples[4]},{samples[5]},{samples[6]},{samples[7]}");
 
-            for (int i = 0; i < samples.Length; i++)
-            {
-                Complex mono = new Complex(GAIN * samples[i], 0.0f);
-                _timeRingBuffer[_timeIndex + i] = mono;       // Left.
-                _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
-            }
+            //for (int i = 0; i < samples.Length; i++)
+            //{
+            //    Complex mono = new Complex(GAIN * samples[i], 0.0f);
+            //    _timeRingBuffer[_timeIndex + i] = mono;       // Left.
+            //    _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
+            //}
+
+            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length);
+            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length);
 
             _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
 
