@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -32,6 +33,11 @@ using NAudio.Wave;
 
 namespace AudioScope
 {
+    public interface IBitmapSource
+    {
+        public event Action<Bitmap> OnBitmap;
+    }
+
     public enum AudioSourceEnum
     {
         NAudio = 0,
@@ -449,3 +455,4 @@ namespace AudioScope
         }
     }
 }
+ 

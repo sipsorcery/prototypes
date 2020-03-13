@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using SharpGL;
@@ -9,7 +11,7 @@ using SharpGL.VertexBuffers;
 
 namespace AudioScope
 {
-    public class AudioScopeOpenGL
+    public class AudioScopeOpenGL : IBitmapSource
     {
         private const string VERTEX_SHADER_PATH = "shaders/line/line.vert";
         private const string FRAGMENT_SHADER_PATH = "shaders/line/line.frag";
@@ -35,8 +37,10 @@ namespace AudioScope
 
         private AudioScope _audioScope = new AudioScope();
         private SharpGL.Shaders.ShaderProgram _prog;
-        private SharpGL.Shaders.ShaderProgram _clearProg;
-        private float[] _clearRectangle;
+        //private SharpGL.Shaders.ShaderProgram _clearProg;
+        //private float[] _clearRectangle;
+
+        public event Action<Bitmap> OnBitmap;
 
         public AudioScopeOpenGL(AudioScope audioScope)
         {
@@ -166,7 +170,19 @@ namespace AudioScope
 
                 gl.DrawArrays(OpenGL.GL_LINE_STRIP_ADJACENCY, 0, data.Length);
 
-                vertexBuffer.Unbind(gl);
+                //if (OnBitmap != null)
+                //{
+                    Rectangle rec = new Rectangle(0, 0, width, height);
+                    Bitmap bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    BitmapData bmpData = bmp.LockBits(rec, ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    gl.ReadPixels(0, 0, bmp.Width, bmp.Height, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, bmpData.Scan0);
+                    bmp.UnlockBits(bmpData);
+
+                    //bmp.Save($"dump_{DateTime.Now.ToString("HHmmssfff")}.bmp");
+                    OnBitmap?.Invoke(bmp);
+
+                    bmp.Dispose();
+                //}
             }
         }
     }
