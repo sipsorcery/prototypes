@@ -29,9 +29,6 @@
     <ClInclude Include="mjpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="endiautils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RtpSocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>

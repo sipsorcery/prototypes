@@ -38,10 +38,7 @@ namespace sipsorcery
   class RtpSocket
   {
   public:
-    int BitmapWidth;
-    int BitmapHeight;
-
-    RtpSocket(int listenPort, int bmpWidth, int bmpHeight);
+    RtpSocket(int listenPort);
     ~RtpSocket();
     void SetBitmapReadyCallback(std::function<void(std::vector<uint8_t>&)> cb);
     void Start();

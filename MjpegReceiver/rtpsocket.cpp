@@ -1,11 +1,16 @@
 #include "rtpsocket.h"
+#include "strutils.h"
+
+#include <fstream>
+#include <iterator>
+#include <string>
 
 #define RECEIVE_BUFFER_SIZE 2048
 
 namespace sipsorcery
 {
-  RtpSocket::RtpSocket(int listenPort, int bmpWidth, int bmpHeight) :
-    _listenPort(listenPort), BitmapWidth(bmpWidth), BitmapHeight(bmpHeight), _listenAddr(),
+  RtpSocket::RtpSocket(int listenPort) :
+    _listenPort(listenPort), _listenAddr(),
     _timeout()
   { }
 
@@ -78,6 +83,8 @@ namespace sipsorcery
     struct sockaddr_in SenderAddr;
     int SenderAddrSize = sizeof(SenderAddr);
     struct fd_set fds;
+    std::vector<uint8_t> frame;
+    int frameCounter = 0;
 
     while (!_closed)
     {
@@ -109,41 +116,76 @@ namespace sipsorcery
       }
       else if (selectResult > 0) {
 
-        int iResult = recvfrom(_rtpSocket,
+        int bytesRead = recvfrom(_rtpSocket,
           (char *)recvBuffer.data(),
           recvBuffer.size(),
           0,
           (SOCKADDR*)&SenderAddr,
           &SenderAddrSize);
 
-        if (iResult == SOCKET_ERROR)
+        if (bytesRead == SOCKET_ERROR)
         {
           int lastError = WSAGetLastError();
           std::cerr << "recvfrom failed with error " << lastError << "." << std::endl;
         }
-        else if(iResult > RtpHeader::RTP_MINIMUM_HEADER_LENGTH)
+        else if(bytesRead > RtpHeader::RTP_MINIMUM_HEADER_LENGTH)
         {
          /* rtp_hdr* rtpHeader = (rtp_hdr*)&RecvBuf;*/
-          int payloadLength = iResult - RtpHeader::RTP_MINIMUM_HEADER_LENGTH;
+          int payloadLength = bytesRead - RtpHeader::RTP_MINIMUM_HEADER_LENGTH;
           RtpHeader rtpHeader;
-          rtpHeader.Deserialise(recvBuffer, 0);
-          JpegRtpHeader rtpJpegHeader;
-          rtpJpegHeader.Deserialise(recvBuffer, RtpHeader::RTP_MINIMUM_HEADER_LENGTH);
+          int rtpHdrLen = rtpHeader.Deserialise(recvBuffer, 0);
+          JpegRtpHeader jpegHeader;
+          int jpegHdrLen = jpegHeader.Deserialise(recvBuffer, RtpHeader::RTP_MINIMUM_HEADER_LENGTH);
 
           std::cout << "rtp version " << (int)rtpHeader.Version << ", marker " << (int)rtpHeader.MarkerBit << ", ssrc " << rtpHeader.SyncSource << 
             ", timestamp " << rtpHeader.Timestamp << ", seqnum " << rtpHeader.SeqNum << ", payload length " << payloadLength << 
-            ", jpeg offset " << rtpJpegHeader.Offset << ", Q " << (int)rtpJpegHeader.Q << ", width " << rtpJpegHeader.Width * 8 << 
-            ", height " << rtpJpegHeader.Height * 8 <<
-            ", Q table length " << rtpJpegHeader.Length << "." << std::endl;
+            ", jpeg offset " << jpegHeader.Offset << ", Q " << (int)jpegHeader.Q << ", width " << jpegHeader.Width * 8 << 
+            ", height " << jpegHeader.Height * 8 << ", Q table length " << jpegHeader.Length << "." << std::endl;
+          std::cout << "Q Table: " << toHex(jpegHeader.QTable) << std::endl;
 
           //std::vector<uint8_t> buffer(&RecvBuf[0], &RecvBuf[iResult]);
           //buffer.insert(buffer.begin(), dataVec2.begin(), dataVec2.end());
           //std::copy(&RecvBuf[0], &RecvBuf[iResult], std::front_inserter(buffer));
           //buffer.resize(BitmapWidth * BitmapHeight * BYTES_PER_PIXEL);
 
-          if (_cb != nullptr)
-          {
-            //_cb(buffer);
+          if (jpegHeader.Offset == 0) {
+            frame.clear();
+
+            // Add the JFIF header at the top of the frame.
+            sipsorcery::Jfif jfif;
+            jfif.jpeg_create_header(frame, jpegHeader.Type, jpegHeader.Width, jpegHeader.Height, jpegHeader.QTable.data(), 1, 0);
+          }
+
+          int hdrLen = rtpHdrLen + jpegHdrLen;
+          int payloadLen = bytesRead - hdrLen;
+          if (payloadLen > 0) {
+            std::copy(recvBuffer.begin() + hdrLen, recvBuffer.begin() + bytesRead, std::back_inserter(frame));
+            std::cout << payloadLen << " bytes written to frame." << std::endl;
+          }
+          else {
+            std::cout << "No payload bytes in RTP packet." << std::endl;
+          }
+
+          if (rtpHeader.MarkerBit == 1) {
+            
+            // Need to write the jpeg end of data tag.
+            sipsorcery::Jfif::jpeg_put_marker(frame, sipsorcery::Jfif::JpegMarker::EOI);
+
+            // This is the last packet in the JPEG frame.
+            std::cout << "frame ready total length " << frame.size() << "." << std::endl;
+
+            std::ofstream output_file("frame_" + std::to_string(frameCounter) + ".jpeg", std::ios::out | std::ofstream::binary);
+            std::ostream_iterator<uint8_t> output_iterator(output_file);
+            std::copy(frame.begin(), frame.end(), output_iterator);
+            output_file.close();
+
+            if (_cb != nullptr)
+            {
+              //_cb(buffer);
+            }
+
+            frame.clear();
+            frameCounter++;
           }
         }
       }

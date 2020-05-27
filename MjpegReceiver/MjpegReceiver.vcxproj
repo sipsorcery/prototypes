@@ -151,7 +151,6 @@
     <ClCompile Include="rtpsocket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="endiautils.h" />
     <ClInclude Include="mjpeg.h" />
     <ClInclude Include="rtpsocket.h" />
     <ClInclude Include="strutils.h" />
