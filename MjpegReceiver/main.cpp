@@ -1,11 +1,9 @@
-// CppRtpReceiver.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
-#include "RtpSocket.h"
+#include "rtpsocket.h"
 
 #include <cassert>
 #include <iostream>
 #include <thread>
+#include <stdlib.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -16,12 +14,30 @@ void OnRtpBitmapReady(std::vector<uint8_t>& bmp);
 int main()
 {
   std::cout << "mjpeg console" << std::endl;
-  
-  auto _rtpSocket = std::make_unique<sipsorcery::RtpSocket>(RTP_LISTEN_PORT);
-  //auto fp = std::bind(&TermControl::_OnRtpBitmapReady, this, std::placeholders::_1);
-  _rtpSocket->SetBitmapReadyCallback(OnRtpBitmapReady);
 
-  _rtpSocket->Start();
+  std::vector<uint8_t> buf{ 0x01, 0x00, 0x00, 0x00 };
+
+  std::cout << toHex(buf) 
+    << ", le=" << sipsorcery::read_le16(buf, 0) 
+    << ", be=" << sipsorcery::read_be16(buf, 0) 
+    << ", read_16=" << sipsorcery::read_16(buf, 0) 
+    << ", ntohs=" << ntohs(sipsorcery::read_be16(buf, 0))
+    << ", _byteswap_ushort=" << _byteswap_ushort(sipsorcery::read_be16(buf, 0))
+    << "." << std::endl;
+
+  std::cout << toHex(buf)
+    << ", le=" << sipsorcery::read_le32(buf, 0)
+    << ", be=" << sipsorcery::read_be32(buf, 0)
+    << ", read_32=" << sipsorcery::read_32(buf, 0)
+    << ", ntohl=" << ntohl(sipsorcery::read_be32(buf, 0))
+    << ",_byteswap_ulong=" << _byteswap_ulong(sipsorcery::read_be16(buf, 0))
+    << "." << std::endl;
+  
+  //auto _rtpSocket = std::make_unique<sipsorcery::RtpSocket>(RTP_LISTEN_PORT);
+  ////auto fp = std::bind(&TermControl::_OnRtpBitmapReady, this, std::placeholders::_1);
+  //_rtpSocket->SetBitmapReadyCallback(OnRtpBitmapReady);
+
+  //_rtpSocket->Start();
 
   //std::vector<uint8_t> buf;
   //sipsorcery::Jfif jfif;

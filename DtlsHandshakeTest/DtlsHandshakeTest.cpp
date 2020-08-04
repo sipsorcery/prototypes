@@ -38,6 +38,7 @@
 #define ERROR_BUFFER_SIZE 2048
 #define HANDSHAKE_TIMEOUT_SECONDS 15
 #define DTLS_COOKIE "dummy"
+#define SRTP_ALGORITHM "SRTP_AES128_CM_SHA1_80"
 
 #define SSL_WHERE_INFO(ssl, w, flag, msg) {                \
     if(w & flag) {                                         \
@@ -186,8 +187,8 @@ void RunServer(AddressFamily addrFamily)
   }
 
   // Set our supported ciphers.
-  //res = SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
-  res = SSL_CTX_set_cipher_list(ctx, "ALL:NULL:eNULL:aNULL");
+  res = SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+  //res = SSL_CTX_set_cipher_list(ctx, "ALL:NULL:eNULL:aNULL");
   if (res != 1) {
     printf("Error: cannot set the cipher list.\n");
     ERR_print_errors_fp(stderr);
@@ -231,7 +232,7 @@ void RunServer(AddressFamily addrFamily)
   }
 
   // Create Basic I/O.
-  bio = BIO_new_dgram(svrSock, BIO_NOCLOSE);
+  bio = BIO_new_dgram((int)svrSock, BIO_NOCLOSE);
   if (!bio) {
     printf("Error: cannot create new BIO.\n");
     goto cleanup;
@@ -378,10 +379,18 @@ void RunClient(AddressFamily addrFamily)
   }
 
   // Set our supported ciphers.
-  //res = SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
-  res = SSL_CTX_set_cipher_list(ctx, "ALL:NULL:eNULL:aNULL");
+  res = SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+  //res = SSL_CTX_set_cipher_list(ctx, "ALL:NULL:eNULL:aNULL");
   if (res != 1) {
     printf("Error: cannot set the cipher list.\n");
+    ERR_print_errors_fp(stderr);
+    goto cleanup;
+  }
+
+  /* enable srtp */
+  res = SSL_CTX_set_tlsext_use_srtp(ctx, SRTP_ALGORITHM);
+  if (res != 0) {
+    printf("Error: cannot setup srtp.\n");
     ERR_print_errors_fp(stderr);
     goto cleanup;
   }
@@ -397,7 +406,7 @@ void RunClient(AddressFamily addrFamily)
   }
 
   // Create Basic I/O.
-  bio = BIO_new_dgram(cliSock, BIO_NOCLOSE);
+  bio = BIO_new_dgram((int)cliSock, BIO_NOCLOSE);
   if (!bio) {
     printf("Error: cannot create new BIO.\n");
     goto cleanup;

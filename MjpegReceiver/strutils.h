@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+namespace
+{
 const signed char p_util_hexdigit[256] =
 { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -103,6 +105,7 @@ template < class T >
 const std::string toHex(const T& v)
 {
 	return toHex(v.begin(), v.end());
+}
 }
 
 #endif STRUTILS_H

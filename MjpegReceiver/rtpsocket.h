@@ -17,6 +17,7 @@
 #define SIPSORCERY_RTPSOCKET_H
 
 #include "mjpeg.h"
+#include "strutils.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
