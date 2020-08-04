@@ -1,4 +1,30 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: Program.cs
+//
+// Description: Test program to load a native dll and that works cross platform.
+
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 04 Aug 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+// Background info:
+// https://www.mono-project.com/docs/advanced/pinvoke/
+//
+//-----------------------------------------------------------------------------
+// Usage:
+// To load from vcpkg directory (adjust x86/x64 as required):
+//
+// dotnet run C:\Tools\vcpkg\installed\x64-windows\bin
+// dotnet run -r win-x86 C:\Tools\vcpkg\installed\x86-windows\bin
+//
+//-----------------------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -21,8 +47,9 @@ namespace LoadNativeLibrary
         static void Main(string[] args)
         {
             Console.WriteLine("Load Native Library Console!");
+            Console.WriteLine($"Is 64bit process {Environment.Is64BitProcess}.");
 
-            if(args?.Length > 0)
+            if (args?.Length > 0)
             {
                 string searchDir = args[0].Trim();
 
