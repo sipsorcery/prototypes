@@ -1,8 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: Test program to load a native dll and that works cross platform.
-
+// Description: Test program to load ffmpeg dll's and that works 
+// cross platform.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -13,13 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 // Background info:
-// Mono article giving very detailed explanation of search paths for dll's on
-// Windows, Linux and Macos.
 // https://www.mono-project.com/docs/advanced/pinvoke/
 //
-// RedHat article providing concise explanation and example of how to use
-// NativeLibrary class from System.Runtime.InteropServices.
-// https://developers.redhat.com/blog/2019/09/06/interacting-with-native-libraries-in-net-core-3-0/
 //-----------------------------------------------------------------------------
 // Usage:
 // To load from vcpkg directory (adjust x86/x64 as required):
@@ -39,12 +35,20 @@ namespace LoadNativeLibrary
     class Program
     {
         public const string LIB_AVCODEC_BASE_NAME = "avcodec";
+        public const string LIB_AVFORMAT_BASE_NAME = "avformat";
         public const string LIB_AVCODEC_VERSION = "58";
 
         public const string LIB_AVCODEC_WINDOWS_NAME = LIB_AVCODEC_BASE_NAME + "-" + LIB_AVCODEC_VERSION;
+        public const string LIB_AVFORMAT_WINDOWS_NAME = LIB_AVFORMAT_BASE_NAME + "-" + LIB_AVCODEC_VERSION;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         static extern bool SetDllDirectory(string lpPathName);
+
+        [DllImport(LIB_AVFORMAT_WINDOWS_NAME)]
+        static extern uint avformat_version();
+
+        [DllImport(LIB_AVFORMAT_WINDOWS_NAME)]
+        static extern void av_register_all();
 
         [DllImport(LIB_AVCODEC_WINDOWS_NAME)]
         static extern uint avcodec_version();
@@ -72,6 +76,9 @@ namespace LoadNativeLibrary
             NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), ImportResolver);
 
             Console.WriteLine($"avcodec version {avcodec_version()}.");
+            Console.WriteLine($"avformat version {avformat_version()}.");
+
+            av_register_all();
 
             Console.WriteLine("press any key to exit...");
             Console.ReadLine();
