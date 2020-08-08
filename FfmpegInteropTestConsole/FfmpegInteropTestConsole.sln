@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29911.98
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegInteropTestConsole", "FfmpegInteropTestConsole.csproj", "{BAE17065-75D7-4144-AC66-3DEDBA31983A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegInterop", "..\FfmpegInterop\FfmpegInterop.csproj", "{C6B2A1AB-1147-4790-88B3-6C8C67BE32FA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BAE17065-75D7-4144-AC66-3DEDBA31983A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAE17065-75D7-4144-AC66-3DEDBA31983A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAE17065-75D7-4144-AC66-3DEDBA31983A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAE17065-75D7-4144-AC66-3DEDBA31983A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6B2A1AB-1147-4790-88B3-6C8C67BE32FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6B2A1AB-1147-4790-88B3-6C8C67BE32FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6B2A1AB-1147-4790-88B3-6C8C67BE32FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6B2A1AB-1147-4790-88B3-6C8C67BE32FA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {06A5B84D-6809-45C6-97AA-DB6722A0BD79}
+	EndGlobalSection
+EndGlobal
