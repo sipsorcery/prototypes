@@ -275,8 +275,10 @@ namespace AudioScope
             //    _timeRingBuffer[_timeIndex + FFT_SIZE + i] = mono; // right
             //}
 
-            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length);
-            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length);
+            //Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length);
+            //Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length);
+            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex, samples.Length > FFT_SIZE ? FFT_SIZE : samples.Length);
+            Array.Copy(samples, 0, _timeRingBuffer, _timeIndex + FFT_SIZE, samples.Length > (_timeRingBuffer.Length/2 - _timeIndex) ? _timeRingBuffer.Length / 2 - _timeIndex : samples.Length);
 
             _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
 
