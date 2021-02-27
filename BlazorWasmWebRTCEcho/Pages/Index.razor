@@ -1,0 +1,51 @@
+﻿@page "/"
+@inject IJSRuntime JSRuntime
+
+<h1>Echo Test</h1>
+
+    Echo Test
+
+<table>
+    <thead>
+        <tr>
+            <th>Source</th>
+            <th>Echo</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>
+            <video controls autoplay="autoplay" id="localVideoCtl" width="320" height="240"></video>
+        </td>
+        <td>
+            <video controls autoplay="autoplay" id="echoVideoCtl" width="320" height="240"></video>
+        </td>
+
+    </tr>
+</table>
+
+<div>
+    <label>Signaling URL:</label> <input type="text" id="signalingUrl" size="40" value="@SIGNALING_URL" /><br />
+    <button type="button" class="btn btn-success" @onclick="Start">Start</button>
+    <button type="button" class="btn btn-success" @onclick="Close">Close</button>
+</div>
+
+@code {
+
+    private const string SIGNALING_URL = "https://sipsorcery.cloud/sipsorcery/echo/offer";
+
+    //protected override Task OnInitializedAsync()
+    //{
+
+    //}
+
+    private async void Start()
+    {
+        await JSRuntime.InvokeVoidAsync("start");
+    }
+
+    private async void Close()
+    {
+        await JSRuntime.InvokeVoidAsync("closePeer");
+    }
+}
+
