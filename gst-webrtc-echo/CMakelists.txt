@@ -26,8 +26,11 @@ TARGET_LINK_LIBRARIES(gst-webrtc-echo
     glib-2.0 
     gobject-2.0 
     event 
-    cjson 
-    gstreamer-1.0 
-    gstbase-1.0
-    gstsdp-1.0
-    gstwebrtc-1.0)
+    cjson
+    #gstreamer-1.0 
+    #gstbase-1.0
+    #gstsdp-1.0
+    #gstwebrtc-1.0
+    )
+
+TARGET_LINK_LIBRARIES(gst-webrtc-echo gstreamer-full-1.0 -static)
