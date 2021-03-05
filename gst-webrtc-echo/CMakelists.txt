@@ -1,20 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(gst-webrtc-echo VERSION 1.0)
 
-#find_package(libevent CONFIG REQUIRED)
-
-#find_library(gstwebrtc NAMES gstwebrtc-1.0 PATHS /home/aaron/gstreamer/lib/x86_64-linux-gnu)
-#MESSAGE("gstwebrtc: " ${gstwebrtc})
-#find_library(gstreamer NAMES gstreamer-1.0 PATHS "/home/aaron/gstreamer/lib/x86_64-linux-gnu" NO_DEFAULT_PATH)
-#MESSAGE("gstreamer: " ${gstreamer})
-#find_library(gstrtp NAMES gstrtp-1.0 PATHS "/home/aaron/gstreamer/lib/x86_64-linux-gnu" NO_DEFAULT_PATH)
-#MESSAGE("gstrtp: " ${gstrtp})
-#find_library(gstbase NAMES gstbase-1.0 PATHS "/home/aaron/gstreamer/lib/x86_64-linux-gnu" NO_DEFAULT_PATH)
-#MESSAGE("gstbase: " ${gstbase})
-#find_library(gstsdp NAMES gstsdp-1.0 PATHS "/home/aaron/gstreamer/lib/x86_64-linux-gnu" NO_DEFAULT_PATH)
-#MESSAGE("gstsdp: " ${gstsdp})
-
 add_executable(gst-webrtc-echo gst-webrtc-echo.c)
+target_sources(gst-webrtc-echo PRIVATE cJSON.c)
 
 target_include_directories(gst-webrtc-echo PRIVATE 
     /usr/local/include/gstreamer-1.0
@@ -23,14 +11,7 @@ target_include_directories(gst-webrtc-echo PRIVATE
     /usr/lib/x86_64-linux-gnu/glib-2.0/include)
 
 TARGET_LINK_LIBRARIES(gst-webrtc-echo 
-    glib-2.0 
-    gobject-2.0 
-    event 
-    cjson
-    #gstreamer-1.0 
-    #gstbase-1.0
-    #gstsdp-1.0
-    #gstwebrtc-1.0
-    )
-
-TARGET_LINK_LIBRARIES(gst-webrtc-echo gstreamer-full-1.0 -static)
+    glib-2.0
+    gobject-2.0
+    event
+    gstreamer-full-1.0)

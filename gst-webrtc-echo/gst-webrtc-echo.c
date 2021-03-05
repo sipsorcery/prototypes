@@ -29,7 +29,7 @@
 
 #define GST_USE_UNSTABLE_API
 
-#include <cjson/cJSON.h>
+#include "cJSON.h"
 #include <event2/buffer.h>
 #include <event2/event.h>
 #include <event2/http.h>
@@ -47,7 +47,7 @@
 #define RTP_CAPS_VP8 "application/x-rtp,media=video,encoding-name=VP8,payload=96"
 //#define RTP_CAPS_H264 "application/x-rtp,media=video,encoding-name=H264,payload=104"
 
-static void on_request_cb(struct evhttp_request* req, void* arg);
+static void on_http_request_cb(struct evhttp_request* req, void* arg);
 static GstElement* create_webrtc();
 static void on_negotiation_needed (GstElement* element, gpointer user_data);
 static void send_ice_candidate_message (GstElement* webrtc G_GNUC_UNUSED, guint mlineindex, gchar* candidate, gpointer user_data G_GNUC_UNUSED);
@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
 {
   GMainLoop* gst_main_loop;
   GThread* main_loop_thread;
-  //struct event_config* cfg = NULL;
   struct event_base* base = NULL;
   struct evhttp* httpSvr = NULL;
   int res = 0;
 
 #ifdef _WIN32
   {
+    /* If running on Windows need to initialise sockets. */
     WORD wVersionRequested;
     WSADATA wsaData;
     wVersionRequested = MAKEWORD(2, 2);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  /* Initialize GStreamer */
+  /* Initialise GStreamer. */
   gst_init (&argc, &argv);
 
   gst_main_loop = g_main_loop_new(NULL, FALSE);
@@ -87,18 +87,13 @@ int main(int argc, char* argv[])
     fprintf(stderr, "Couldn't create a main loop thread.\n");
     return -1;
   }
-  //_beginthread(g_main_loop_run, 0, gst_main_loop);
 
   /* Initialise libevent HTTP server. */
-  //cfg = event_config_new();
-  //base = event_base_new_with_config(cfg);
   base = event_base_new();
   if (!base) {
     fprintf(stderr, "Couldn't create an event_base: exiting.\n");
     return -1;
   }
-  //event_config_free(cfg);
-  //cfg = NULL;
 
   httpSvr = evhttp_new(base);
   if (!httpSvr) {
@@ -117,15 +112,9 @@ int main(int argc, char* argv[])
     EVHTTP_REQ_POST |
     EVHTTP_REQ_OPTIONS);
 
-  printf("Waiting for offer on http://%s:%d%s...\n", HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_OFFER_URL);
+  printf("Waiting for SDP offer on http://%s:%d%s...\n", HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_OFFER_URL);
 
-  res = evhttp_set_cb(httpSvr, HTTP_OFFER_URL, on_request_cb, NULL);
-
-  /*if (event_dispatch() == -1)
-  {
-    fprintf(stderr, "Failed to start libevent message loop.\n");
-    return -1;
-  }*/
+  res = evhttp_set_cb(httpSvr, HTTP_OFFER_URL, on_http_request_cb, NULL);
 
   event_base_dispatch(base);
 
@@ -140,7 +129,14 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-static void on_request_cb(struct evhttp_request* req, void* arg)
+/**
+* The handler function for an incoming HTTP request. This is the start of the 
+* handling for any WebRTC peer that wishes to establish a connection. The incoming
+* request MUST have an SDP offer in its body.
+* @param[in] req: the HTTP request received from the remote client.
+* @param[in] arg: not used.
+*/
+static void on_http_request_cb(struct evhttp_request* req, void* arg)
 {
   const char* uri = evhttp_request_get_uri(req);
   struct evbuffer* http_req_body;
@@ -265,6 +261,13 @@ static void on_request_cb(struct evhttp_request* req, void* arg)
   }
 }
 
+/**
+* Attempts to create the gstreamer WebRTC pipeline. Signal handlers
+* for important events are attached to the WebRTC object and will be
+* responsible for progressing the WebRTC connection subsequent to its
+* creation.
+* @@Returns a new WebRTC object.
+*/
 static GstElement* create_webrtc()
 {
   GstElement* pipeline, * webrtcbin;
@@ -328,6 +331,11 @@ static GstElement* create_webrtc()
   return webrtcbin;
 }
 
+/**
+* 
+* @param[in] webrtc: the HTTP request received from the remote client.
+* @param[in] sdp_offer_str: not used.
+*/
 static void set_offer(GstElement* webrtc, const gchar* sdp_offer_str)
 {
   GstWebRTCSessionDescription* offer = NULL;

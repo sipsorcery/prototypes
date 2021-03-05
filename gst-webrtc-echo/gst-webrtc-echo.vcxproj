@@ -11,11 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cJSON.c" />
     <ClCompile Include="gst-webrtc-echo.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CMakelists.txt" />
+    <None Include="Dockerfile" />
+    <None Include="Dockerfile-Gstbuilder" />
     <None Include="index.html" />
+    <None Include="libnice-fix-gst-env-static-build.diff" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cJSON.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

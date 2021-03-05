@@ -1,38 +1,22 @@
-FROM ubuntu:latest
+FROM gst-builder:latest as builder
+FROM ubuntu:latest as final
 
-# Install packages for gstreamer build and app dependencies.
-RUN apt update &&  DEBIAN_FRONTEND="noninteractive" apt install -y \
-  bison build-essential cmake flex git libevent-dev libglib2.0-dev libnice-dev \
-  libsrtp2-dev libssl-dev libvpx-dev ninja-build python-is-python3 python3-pip \
+# Install packages with the required runtime libraries.
+RUN apt update && DEBIAN_FRONTEND="noninteractive" apt install -y \
+  build-essential cmake libglib2.0-dev libevent-dev \
+  libsoup2.4-1 libvpx-dev libgupnp-igd-1.0-4 libsrtp2-dev \
   && rm -rf /var/lib/apt/lists/*
-  
-# Build gstreamer
-RUN python -m pip install meson
-WORKDIR /src 
-RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-build.git gst-build
-WORKDIR /src/gst-build
-RUN meson -Dgood=enabled -Dgst-plugins-good:vpx=enabled \
-  -Dbad=enabled -Dgst-plugins-bad:dtls=enabled \
-  -Dbad=enabled -Dgst-plugins-bad:srtp=enabled \
-  -Dbad=enabled -Dgst-plugins-bad:webrtc=enabled \
-  builddir
-RUN ninja -C builddir
-RUN meson install -C builddir
 
-# Install source app dependency.
-WORKDIR /src
-RUN git clone https://github.com/DaveGamble/cJSON.git cJSON
-WORKDIR /src/cJSON/builddir
-RUN cmake .. && make && make install
+COPY --from=builder /usr/local/include/gstreamer-1.0 /usr/include
+COPY --from=builder /usr/local/lib/x86_64-linux-gnu/libgstreamer-full-1.0.so /usr/lib/
+#TODO: Determine apt package for libdssim. 
+COPY --from=builder /usr/local/lib/x86_64-linux-gnu/libdssim-lib.so /usr/lib/libdssim-lib.so.1
 
-# Copy app source and build
 WORKDIR /src/gst-webrtc-echo
-COPY ["CMakeLists.txt", ""]
-COPY ["gst-webrtc-echo.c", ""]
+COPY ["cJSON.c", "cJSON.h", "CMakeLists.txt", "gst-webrtc-echo.c", "./"]
 WORKDIR /src/gst-webrtc-echo/builddir
-RUN cmake .. && make && ldconfig
-RUN cp gst-webrtc-echo /
-RUN rm -rf /src
+RUN cmake .. && make && cp gst-webrtc-echo /
+WORKDIR /
 
 EXPOSE 8080
 ENTRYPOINT ["/gst-webrtc-echo"]
