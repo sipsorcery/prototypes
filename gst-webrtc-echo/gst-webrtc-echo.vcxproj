@@ -19,7 +19,6 @@
     <None Include="Dockerfile" />
     <None Include="Dockerfile-Gstbuilder" />
     <None Include="index.html" />
-    <None Include="libnice-fix-gst-env-static-build.diff" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
