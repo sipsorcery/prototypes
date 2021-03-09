@@ -1,64 +1,69 @@
+﻿/******************************************************************************
+* Filename: libwebrtc-webrtc-echo.cpp
+*
+* Description:
+* Main program for a test program that creates a echo peer using Google's
+* webrtc library, https://webrtc.googlesource.com/src/webrtc/.
+* 
+* Dependencies:
+* vcpkg install nlohmann-json:x64-windows # Too much time sent troubleshooting jsoncpp.
+*
+* Author:
+* Aaron Clauson (aaron@sipsorcery.com)
+*
+* History:
+* 08 Mar 2021	Aaron Clauson	  Created, Dublin, Ireland.
+*
+* License: Public Domain (no warranty, use at own risk)
+/******************************************************************************/
+
 // gn gen out/Default --args="is_clang=false use_lld=false"
 // gn args out/Default --list # Check use_lld is false. is_clang always shows true but if the false option is not set then linker errors when using webrtc.lib.
 // gn clean out/Default # If previous compilation.
 // ninja -C out/Default
 
-#define NOMINMAX
-#define WEBRTC_WIN
+#include "HttpSimpleServer.h"
+#include "PcFactory.h"
 
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/create_peerconnection_factory.h"
-#include <api/peer_connection_interface.h>
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "api/video_codecs/video_decoder_factory.h"
-#include "api/video_codecs/video_encoder_factory.h"
-
+#include <condition_variable>
 #include <iostream>
+#include <memory>
+#include <mutex>
+#include <string>
 
-class AppWebRTCObserver : public webrtc::PeerConnectionObserver
-{
-public:
-
-  void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
-  {
-  }
-
-  void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
-  {
-  }
-  
-  void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
-  {
-  }
-  
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
-  {
-  }
-};
+#define HTTP_SERVER_ADDRESS "0.0.0.0"
+#define HTTP_SERVER_PORT 8080
+#define HTTP_OFFER_URL "/offer"
 
 int main()
 {
-    std::cout << "libwebrtc echo test server" << std::endl;
+  std::cout << "libwebrtc echo test server" << std::endl;
 
-    auto peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-      nullptr /* network_thread */, nullptr /* worker_thread */,
-      nullptr /* signaling_thread */, nullptr /* default_adm */,
-      webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory(),
-      webrtc::CreateBuiltinVideoEncoderFactory(),
-      webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-      nullptr /* audio_processing */);
+#ifdef _WIN32
+  {
+    /* If running on Windows need to initialise sockets. */
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    wVersionRequested = MAKEWORD(2, 2);
+    WSAStartup(wVersionRequested, &wsaData);
+  }
+#endif
 
-    AppWebRTCObserver appWebrtcObserver;
+  HttpSimpleServer httpSvr;
+  httpSvr.Init(HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_OFFER_URL);
 
-    webrtc::PeerConnectionInterface::RTCConfiguration config;
-    config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
-    config.enable_dtls_srtp = true;
+  PcFactory pcFactory;
+  HttpSimpleServer::SetPeerConnectionFactory(&pcFactory);
 
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc = peer_connection_factory->CreatePeerConnection(
-      config, nullptr, nullptr, &appWebrtcObserver);
+  httpSvr.Run();
+
+  std::cout << "Stopping HTTP server..." << std::endl;
+
+  httpSvr.Stop();
+
+#ifdef _WIN32
+  WSACleanup();
+#endif
+
+  std::cout << "Exiting..." << std::endl;
 }
