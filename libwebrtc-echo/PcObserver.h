@@ -19,35 +19,36 @@
 #include <api/peer_connection_interface.h>
 
 #include <condition_variable>
+#include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <thread>
 
 class PcObserver :
-  public webrtc::CreateSessionDescriptionObserver,
-  public webrtc::PeerConnectionObserver,
-  public webrtc::SetSessionDescriptionObserver
+  public webrtc::PeerConnectionObserver
 { 
 public:
-  /* CreateSessionDescriptionObserver methods. */
   void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state);
   void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel);
   void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state);
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate);
-  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(webrtc::RTCError error) override;
-
-  /* PeerConnectionObserver methods. */
   void OnAddTrack(
     rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
     const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams);
-
   void OnTrack(
     rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver);
+  void OnConnectionChange(
+    webrtc::PeerConnectionInterface::PeerConnectionState new_state);
+};
 
-  /* SetSessionDescriptionObserver methods. */
-  void OnSuccess() override;
-  //void OnFailure(webrtc::RTCError error) override;
+class SetRemoteSdpObserver :
+  public webrtc::SetRemoteDescriptionObserverInterface
+
+{
+  void OnSetRemoteDescriptionComplete(webrtc::RTCError error)
+  {
+    std::cout << "OnSetRemoteDescriptionComplete ok ? " << std::boolalpha << error.ok() << "." << std::endl;
+  }
 };
 
 class CreateSdpObserver :
@@ -55,8 +56,8 @@ class CreateSdpObserver :
 {
 public:
   
-  CreateSdpObserver(std::mutex& mtx, std::condition_variable& cv, bool& isReady, std::string& answerSdp, std::string& error)
-    : _mtx(mtx), _cv(cv), _isReady(isReady), _answerSdp(answerSdp), _error(error) {
+  CreateSdpObserver(std::mutex& mtx, std::condition_variable& cv, bool& isReady)
+    : _mtx(mtx), _cv(cv), _isReady(isReady) {
   }
 
   ~CreateSdpObserver() {
@@ -66,42 +67,19 @@ public:
   void OnSetLocalDescriptionComplete(webrtc::RTCError error) {
     std::cout << "OnSetLocalDescriptionComplete." << std::endl;
 
+    if (!error.ok()) {
+      std::cerr << "OnSetLocalDescription error. " << error.message() << std::endl;
+    }
+
     std::unique_lock<std::mutex> lck(_mtx);
     _isReady = true;
     _cv.notify_all();
   }
 
-  //void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
-
-  //  std::cout << "CreateSdpObserver OnSuccess." << std::endl;
-
-  //  desc->ToString(&_answerSdp);
-
-  //  std::unique_lock<std::mutex> lck(_mtx);
-  //  _isReady = true;
-  //  _cv.notify_all();
-
-  //  std::cout << "CreateSdpObserver OnSuccess end." << std::endl;
-  //}
-
-  //void OnFailure(webrtc::RTCError error) {
-
-  //  _error = error.message();
-
-  //  std::cout << "CreateSdpObserver OnFailure." << std::endl;
-
-  //  std::unique_lock<std::mutex> lck(_mtx);
-  //  _isReady = true;
-  //  _cv.notify_all();
-  //}
-
 private:
   std::mutex& _mtx;
   std::condition_variable& _cv;
   bool& _isReady;
-  std::string& _answerSdp;
-  std::string& _error;
-
 };
 
 #endif

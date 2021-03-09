@@ -31,42 +31,6 @@
 #include <iostream>
 #include <sstream>
 
-class CSDO : public webrtc::CreateSessionDescriptionObserver {
-
-public:
-  CSDO()  {
-  }
-
-  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override {
-    std::cout << std::this_thread::get_id() << ":"
-      << "CreateSessionDescriptionObserver::OnSuccess" << std::endl;
-  };
-
-  void OnFailure(webrtc::RTCError error) override {
-    std::cout << std::this_thread::get_id() << ":"
-      << "CreateSessionDescriptionObserver::OnFailure" << std::endl
-      << error.message() << std::endl;
-  };
-};
-
-class SSDO : public webrtc::SetSessionDescriptionObserver {
-
-public:
-  SSDO() {
-  }
-
-  void OnSuccess() override {
-    std::cout << std::this_thread::get_id() << ":"
-      << "SetSessionDescriptionObserver::OnSuccess" << std::endl;
-  };
-
-  void OnFailure(webrtc::RTCError error) override {
-    std::cout << std::this_thread::get_id() << ":"
-      << "SetSessionDescriptionObserver::OnFailure" << std::endl
-      << error.message() << std::endl;
-  };
-};
-
 PcFactory::PcFactory() :
   _peerConnections()
 {
@@ -90,20 +54,20 @@ PcFactory::PcFactory() :
     nullptr /* audio_processing */);
 }
 
-void PcFactory::WaitForAnswer(std::condition_variable cv) {
+PcFactory::~PcFactory()
+{
+  for (auto pc : _peerConnections) {
+    pc->Close();
+  }
+  _peerConnections.clear();
+  _peerConnectionFactory = nullptr;
 
+  _networkThread->Stop();
+  _workerThread->Stop();
+  _signalingThread->Stop();
 }
 
 std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
-  /*std::mutex m;
-  std::condition_variable cv;
-  std::unique_lock<std::mutex> lk(m);*/
-
-  /*  std::thread worker([]() {
-      WaitForAnswer(cv);
-      });*/
-
-      //cv.wait(lk);
 
   std::string offerStr(buffer, length);
   auto offerJson = nlohmann::json::parse(offerStr);
@@ -130,9 +94,6 @@ std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
 
     _peerConnections.push_back(pc);
 
-    //pc->CreateOffer(&observer, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
-    //auto offer = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, offer);
-
     webrtc::SdpParseError sdpError;
     auto remoteOffer = webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, offerJson["sdp"], &sdpError);
 
@@ -142,17 +103,14 @@ std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
     }
     else {
       std::cout << "Setting remote description on peer connection." << std::endl;
-      auto ssdo = new rtc::RefCountedObject<PcObserver>();
-      pc->SetRemoteDescription(ssdo, remoteOffer.get());
-      //auto ao = new rtc::RefCountedObject<PcObserver>();
+      auto setRemoteObserver = new rtc::RefCountedObject<SetRemoteSdpObserver>();
+      pc->SetRemoteDescription(remoteOffer->Clone(), setRemoteObserver);
 
       std::mutex mtx;
       std::condition_variable cv;
       bool isReady = false;
-      std::string answerSdp;
-      std::string error;
 
-      auto createObs = new rtc::RefCountedObject<CreateSdpObserver>(mtx, cv, isReady, answerSdp, error);
+      auto createObs = new rtc::RefCountedObject<CreateSdpObserver>(mtx, cv, isReady);
       pc->SetLocalDescription(createObs);
 
       std::unique_lock<std::mutex> lck(mtx);
@@ -165,11 +123,12 @@ std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
       auto localDescription = pc->local_description();
 
       if (localDescription == nullptr) {
-        return error;
+        return "Failed to set local description.";
       }
       else {
         std::cout << "Create answer complete." << std::endl;
 
+        std::string answerSdp;
         localDescription->ToString(&answerSdp);
 
         std::cout << answerSdp << std::endl;

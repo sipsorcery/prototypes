@@ -6,7 +6,7 @@
 * webrtc library, https://webrtc.googlesource.com/src/webrtc/.
 * 
 * Dependencies:
-* vcpkg install nlohmann-json:x64-windows # Too much time sent troubleshooting jsoncpp.
+* vcpkg install nlohmann-json:x64-windows
 *
 * Author:
 * Aaron Clauson (aaron@sipsorcery.com)
@@ -17,13 +17,10 @@
 * License: Public Domain (no warranty, use at own risk)
 /******************************************************************************/
 
-// gn gen out/Default --args="is_clang=false use_lld=false"
-// gn args out/Default --list # Check use_lld is false. is_clang always shows true but if the false option is not set then linker errors when using webrtc.lib.
-// gn clean out/Default # If previous compilation.
-// ninja -C out/Default
-
 #include "HttpSimpleServer.h"
 #include "PcFactory.h"
+
+#include <rtc_base/logging.h>
 
 #include <condition_variable>
 #include <iostream>
@@ -49,17 +46,21 @@ int main()
   }
 #endif
 
-  HttpSimpleServer httpSvr;
-  httpSvr.Init(HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_OFFER_URL);
+  rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::WARNING);
 
-  PcFactory pcFactory;
-  HttpSimpleServer::SetPeerConnectionFactory(&pcFactory);
+  {
+    HttpSimpleServer httpSvr;
+    httpSvr.Init(HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_OFFER_URL);
 
-  httpSvr.Run();
+    PcFactory pcFactory;
+    HttpSimpleServer::SetPeerConnectionFactory(&pcFactory);
 
-  std::cout << "Stopping HTTP server..." << std::endl;
+    httpSvr.Run();
 
-  httpSvr.Stop();
+    std::cout << "Stopping HTTP server..." << std::endl;
+
+    httpSvr.Stop();
+  }
 
 #ifdef _WIN32
   WSACleanup();

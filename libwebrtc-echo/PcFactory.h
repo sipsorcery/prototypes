@@ -29,7 +29,7 @@
 class PcFactory {
 public:
   PcFactory();
-  void WaitForAnswer(std::condition_variable cv);
+  ~PcFactory();
   std::string CreatePeerConnection(const char* buffer, int length);
 
 private:

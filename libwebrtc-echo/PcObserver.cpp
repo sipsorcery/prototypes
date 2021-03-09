@@ -36,27 +36,6 @@ void PcObserver::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
   std::cout << "OnIceCandidate " << candidate->candidate().ToString() << "." << std::endl;
 }
 
-void PcObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc)
-{
-  std::cout << "SDP observer on success." << std::endl;
-}
-
-void PcObserver::OnFailure(webrtc::RTCError error)
-{
-  std::cout << "SDP observer on failure: " << error.message() << std::endl;
-}
-
-void PcObserver::OnSuccess()
-{
-  std::cout << "SDP observer set remote description success." << std::endl;
-
-}
-
-//void AppPeerConnectionObserver::OnFailure(webrtc::RTCError error)
-//{
-//  std::cout << "SDP observer set remote description on failure: " << error.message() << std::endl;
-//}
-
 void PcObserver::OnAddTrack(
   rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
   const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
@@ -67,4 +46,10 @@ void PcObserver::OnAddTrack(
 void PcObserver::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 {
   std::cout << "OnTrack." << std::endl;
+}
+
+void PcObserver::OnConnectionChange(
+  webrtc::PeerConnectionInterface::PeerConnectionState new_state)
+{
+  std::cout << "OnConnectionChange to " << (int)new_state << "." << std::endl;
 }
