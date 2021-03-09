@@ -16,6 +16,8 @@
 #ifndef __PEER_CONNECTION_FACTORY__
 #define __PEER_CONNECTION_FACTORY__
 
+#include "PcObserver.h"
+
 #include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
 
@@ -33,6 +35,9 @@ public:
 private:
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> _peerConnectionFactory;
   std::vector<rtc::scoped_refptr<webrtc::PeerConnectionInterface>> _peerConnections;
+  std::unique_ptr<rtc::Thread> _networkThread;
+  std::unique_ptr<rtc::Thread> _workerThread;
+  std::unique_ptr<rtc::Thread> _signalingThread;
 };
 
 #endif

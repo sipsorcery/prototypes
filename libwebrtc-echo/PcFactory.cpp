@@ -13,7 +13,6 @@
 /******************************************************************************/
 
 #include "PcFactory.h"
-#include "PcObserver.h"
 
 #include <nlohmann/json.hpp>
 
@@ -32,12 +31,57 @@
 #include <iostream>
 #include <sstream>
 
+class CSDO : public webrtc::CreateSessionDescriptionObserver {
+
+public:
+  CSDO()  {
+  }
+
+  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override {
+    std::cout << std::this_thread::get_id() << ":"
+      << "CreateSessionDescriptionObserver::OnSuccess" << std::endl;
+  };
+
+  void OnFailure(webrtc::RTCError error) override {
+    std::cout << std::this_thread::get_id() << ":"
+      << "CreateSessionDescriptionObserver::OnFailure" << std::endl
+      << error.message() << std::endl;
+  };
+};
+
+class SSDO : public webrtc::SetSessionDescriptionObserver {
+
+public:
+  SSDO() {
+  }
+
+  void OnSuccess() override {
+    std::cout << std::this_thread::get_id() << ":"
+      << "SetSessionDescriptionObserver::OnSuccess" << std::endl;
+  };
+
+  void OnFailure(webrtc::RTCError error) override {
+    std::cout << std::this_thread::get_id() << ":"
+      << "SetSessionDescriptionObserver::OnFailure" << std::endl
+      << error.message() << std::endl;
+  };
+};
+
 PcFactory::PcFactory() :
   _peerConnections()
 {
+  _networkThread = rtc::Thread::CreateWithSocketServer();
+  _networkThread->Start();
+  _workerThread = rtc::Thread::Create();
+  _workerThread->Start();
+  _signalingThread = rtc::Thread::Create();
+  _signalingThread->Start();
+
   _peerConnectionFactory = webrtc::CreatePeerConnectionFactory(
-    nullptr /* network_thread */, nullptr /* worker_thread */,
-    nullptr /* signaling_thread */, nullptr /* default_adm */,
+    _networkThread.get() /* network_thread */,
+    _workerThread.get() /* worker_thread */,
+    _signalingThread.get() /* signaling_thread */,
+    nullptr /* default_adm */,
     webrtc::CreateBuiltinAudioEncoderFactory(),
     webrtc::CreateBuiltinAudioDecoderFactory(),
     webrtc::CreateBuiltinVideoEncoderFactory(),
@@ -61,44 +105,29 @@ std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
 
       //cv.wait(lk);
 
-  //Json::CharReaderBuilder builder;
-  //Json::CharReader* reader = builder.newCharReader();
-  //Json::Value jmessage;
-  //std::string errors;
-
-  //bool parsingSuccessful = reader->parse(buffer, buffer + length - 1, &jmessage, &errors);
-  //delete reader;
-
-  //if (!parsingSuccessful) {
-  //  //RTC_LOG(WARNING) << "Received unknown message. " << offerMessage;
-  //  return "Error parsing offer message";
-  //}
-  //
-  //std::string sdp = jmessage["sdp"].asString();
-  //if (sdp.empty()) {
-  //  RTC_LOG(WARNING) << "Can't parse received session description message.";
-  //  return "Error parsing sdp value from JSON offer message";
-  //}
-
   std::string offerStr(buffer, length);
   auto offerJson = nlohmann::json::parse(offerStr);
 
   std::cout << offerJson.dump() << std::endl;
 
-  auto observer = new rtc::RefCountedObject<PcObserver>();
-
   webrtc::PeerConnectionInterface::RTCConfiguration config;
   config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
   config.enable_dtls_srtp = true;
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc = _peerConnectionFactory->CreatePeerConnection(
-    config, nullptr, nullptr, observer);
+  auto observer = new rtc::RefCountedObject<PcObserver>();
 
-  if (pc == nullptr) {
-    std::cerr << "Failed to get peer connection from factory." << std::endl;
+  auto pcOrError = _peerConnectionFactory->CreatePeerConnectionOrError(
+    config, webrtc::PeerConnectionDependencies(observer));
+
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc = nullptr;
+
+  if (!pcOrError.ok()) {
+    std::cerr << "Failed to get peer connection from factory. " << pcOrError.error().message() << std::endl;
     return "error";
   }
   else {
+    pc = pcOrError.MoveValue();
+
     _peerConnections.push_back(pc);
 
     //pc->CreateOffer(&observer, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
@@ -113,10 +142,44 @@ std::string PcFactory::CreatePeerConnection(const char* buffer, int length) {
     }
     else {
       std::cout << "Setting remote description on peer connection." << std::endl;
-      pc->SetRemoteDescription(observer, remoteOffer.get());
-      pc->CreateAnswer(observer, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+      auto ssdo = new rtc::RefCountedObject<PcObserver>();
+      pc->SetRemoteDescription(ssdo, remoteOffer.get());
+      //auto ao = new rtc::RefCountedObject<PcObserver>();
 
-      return "answer";
+      std::mutex mtx;
+      std::condition_variable cv;
+      bool isReady = false;
+      std::string answerSdp;
+      std::string error;
+
+      auto createObs = new rtc::RefCountedObject<CreateSdpObserver>(mtx, cv, isReady, answerSdp, error);
+      pc->SetLocalDescription(createObs);
+
+      std::unique_lock<std::mutex> lck(mtx);
+
+      if (!isReady) {
+        std::cout << "Waiting for create answer to complete..." << std::endl;
+        cv.wait(lck);
+      }
+
+      auto localDescription = pc->local_description();
+
+      if (localDescription == nullptr) {
+        return error;
+      }
+      else {
+        std::cout << "Create answer complete." << std::endl;
+
+        localDescription->ToString(&answerSdp);
+
+        std::cout << answerSdp << std::endl;
+
+        nlohmann::json answerJson;
+        answerJson["type"] = "answer";
+        answerJson["sdp"] = answerSdp;
+
+        return answerJson.dump();
+      }
     }
   }
 }
