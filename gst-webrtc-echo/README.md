@@ -8,10 +8,12 @@
 
 ## Running docker image
 
-`docker run -it --init --rm -p 8080:8080 gst-webrtc-echo:latest`
+`docker run -it --init --rm -p 8080:8080 ghcr.io/sipsorcery/gst-webrtc-echo:latest`
 
 Set a gstreamer environment variable for additional logging:
-`docker run -it --init --rm -p 8080:8080 -e "GST_DEBUG=4,dtls*:7" gst-webrtc-echo:latest`
+
+`docker run -it --init --rm -p 8080:8080 -e "GST_DEBUG=4,dtls*:7" ghcr.io/sipsorcery/gst-webrtc-echo:latest`
 
 Override the gst-echo-app and start a bash shell plus add a local volume mapping:
-docker run -it -p 8080:8080 -v %cd%:/pcdodo --entrypoint /bin/bash gst-webrtc-echo:latest
+
+`docker run -it -p 8080:8080 -v %cd%:/pcdodo --entrypoint /bin/bash ghcr.io/sipsorcery/gst-webrtc-echo:latest`
