@@ -231,6 +231,7 @@ static void on_http_request_cb(struct evhttp_request* req, void* arg)
               printf("Return SDP answer to client: %s.\n", json_response);
 
               response_length = strlen(json_response);
+              evhttp_add_header(req->output_headers, "Content-type", "application/json");
               evbuffer_add(resp_buffer, json_response, response_length);
               evhttp_send_reply(req, 200, "OK", resp_buffer);
             }

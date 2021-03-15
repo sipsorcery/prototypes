@@ -103,12 +103,10 @@ void HttpSimpleServer::SetPeerConnectionFactory(PcFactory* pcFactory) {
 void HttpSimpleServer::OnHttpRequest(struct evhttp_request* req, void* arg)
 {
   const char* uri = evhttp_request_get_uri(req);
-  struct evbuffer* http_req_body;
-  size_t http_req_body_len;
+  evbuffer* http_req_body = nullptr;
+  size_t http_req_body_len{ 0 };
   char* http_req_buffer = nullptr;
-  char* json_response;
   struct evbuffer* resp_buffer;
-  size_t response_length;
   int resp_lock = 0;
 
   printf("Received HTTP request for %s.\n", uri);
@@ -143,12 +141,13 @@ void HttpSimpleServer::OnHttpRequest(struct evhttp_request* req, void* arg)
 
       if (_pcFactory != nullptr) {
         std::string answer = _pcFactory->CreatePeerConnection(http_req_buffer, http_req_body_len);
+        evhttp_add_header(req->output_headers, "Content-type", "application/json");
         evbuffer_add_printf(resp_buffer, answer.c_str());
         evhttp_send_reply(req, 200, "OK", resp_buffer);
       }
       else {
         evbuffer_add_printf(resp_buffer, "No handler");
-        evhttp_send_reply(req, 200, "OK", resp_buffer);
+        evhttp_send_reply(req, 400, "Bad Request", resp_buffer);
       }
     }
     else {

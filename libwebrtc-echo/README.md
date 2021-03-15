@@ -4,15 +4,9 @@ This image gets as far as producing `libwebrtc-full.a` so that it can be used fo
 
 `docker build -t libwebrtc-builder:0.1 -f Dockerfile-Builder --progress=plain .`
 
-## Building the application builder docker image
-
-This image builds an application that links to `libwebrtc-full.a`. The image still requires a lot of heavy dependencies which make it unsuitable for publishing.
-
-`docker build -t libwebrtc-appbuilder:0.1 -f Dockerfile-AppBuilder --progress=plain .`
-
 ## Building docker image
 
-The final application image. It copies the binary from the app build er image and installs the required shared library packages.
+The application image. It builds the application on an instance of the builder image and then copies the binary to a new ubuntu image and installs the required shared library packages.
 
 `docker build -t libwebrtc-webrtc-echo:0.1 --progress=plain .`
 
