@@ -24,7 +24,7 @@ HttpSimpleServer::HttpSimpleServer() :
 #ifdef _WIN32
   evthread_use_windows_threads();
 #else
-  evthread_use_pthreads();
+  //evthread_use_pthreads();
 #endif
 
   /* Initialise libevent HTTP server. */
@@ -73,7 +73,7 @@ void HttpSimpleServer::Init(const char* httpServerAddress, int httpServerPort, c
     EVHTTP_REQ_OPTIONS);
 
   std::cout << "Waiting for SDP offer on http://"
-    + std::string(httpServerAddress) + ":" + std::to_string(httpServerPort) + "/" + offerPath << std::endl;
+    + std::string(httpServerAddress) + ":" + std::to_string(httpServerPort) + offerPath << std::endl;
 
   res = evhttp_set_cb(_httpSvr, offerPath, HttpSimpleServer::OnHttpRequest, NULL);
   if (res != 0) {
@@ -82,7 +82,6 @@ void HttpSimpleServer::Init(const char* httpServerAddress, int httpServerPort, c
 }
 
 void HttpSimpleServer::Run() {
-  //_httpSvrThread = std::thread([&] { event_base_dispatch(_evtBase); });
   event_base_dispatch(_evtBase);
 }
 

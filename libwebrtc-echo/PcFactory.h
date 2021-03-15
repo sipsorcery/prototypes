@@ -20,6 +20,7 @@
 
 #include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
+#include <pc/test/fake_audio_capture_module.h>
 
 #include <condition_variable>
 #include <memory>
@@ -38,6 +39,7 @@ private:
   std::unique_ptr<rtc::Thread> _networkThread;
   std::unique_ptr<rtc::Thread> _workerThread;
   std::unique_ptr<rtc::Thread> _signalingThread;
+  rtc::scoped_refptr<FakeAudioCaptureModule> _fakeAudioCapture;
 };
 
 #endif

@@ -18,13 +18,16 @@
     <ClCompile Include="libwebrtc-webrtc-echo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HttpSimpleServer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PcFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PcObserver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpSimpleServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fake_audio_capture_module.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,16 +35,22 @@
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
+    <None Include="Dockerfile-Builder" />
     <None Include="Dockerfile" />
+    <None Include="Dockerfile-AppBuilder" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HttpSimpleServer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PcFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PcObserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpSimpleServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

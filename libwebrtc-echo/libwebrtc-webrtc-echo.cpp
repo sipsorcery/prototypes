@@ -6,7 +6,7 @@
 * webrtc library, https://webrtc.googlesource.com/src/webrtc/.
 * 
 * Dependencies:
-* vcpkg install nlohmann-json:x64-windows
+* vcpkg install libevent:x64-windows
 *
 * Author:
 * Aaron Clauson (aaron@sipsorcery.com)
@@ -45,6 +45,8 @@ int main()
     WSAStartup(wVersionRequested, &wsaData);
   }
 #endif
+
+  std::cout << "libevent version " << event_get_version() << "." << std::endl;
 
   rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::WARNING);
 

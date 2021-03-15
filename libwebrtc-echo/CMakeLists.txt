@@ -1,32 +1,33 @@
-cmake_minimum_required(VERSION 3.15)
-cmake_policy(SET CMP0091 NEW)
+cmake_minimum_required(VERSION 3.5)
 project(libwebrtc-webrtc-echo VERSION 1.0)
 
-find_package(libevent CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-
-add_definitions(-DNOMINMAX -DWEBRTC_WIN -D_ITERATOR_DEBUG_LEVEL=0 -D_DEBUG -D_CONSOLE)
-
 add_executable(libwebrtc-webrtc-echo libwebrtc-webrtc-echo.cpp)
-target_sources(libwebrtc-webrtc-echo PRIVATE HttpSimpleServer.cpp PcFactory.cpp PcObserver.cpp)
+target_sources(libwebrtc-webrtc-echo PRIVATE 
+    HttpSimpleServer.cpp 
+    fake_audio_capture_module.cc
+    PcFactory.cpp 
+    PcObserver.cpp)
 
-set_property(TARGET libwebrtc-webrtc-echo PROPERTY
-             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+add_definitions(-D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS -D_LIBCPP_DEBUG=0 -DWEBRTC_LINUX -DWEBRTC_POSIX)
 
-target_include_directories(libwebrtc-webrtc-echo PRIVATE 
-    c:/dev/webrtc-checkout/src
-    c:/dev/webrtc-checkout/src/third_party/abseil-cpp)
+SET(CMAKE_CXX_FLAGS "-fstack-protector -funwind-tables -fPIC -O0 -g2 -std=c++14")
 
-target_link_directories(libwebrtc-webrtc-echo PRIVATE c:/dev/webrtc-checkout/src/out/Default/obj)
+target_include_directories(libwebrtc-webrtc-echo PRIVATE
+    /src/webrtc-checkout/src
+    /src/webrtc-checkout/src/third_party/abseil-cpp)
 
-target_link_libraries(libwebrtc-webrtc-echo 
-    nlohmann_json
-    libevent::core
-    libevent::extra
-    webrtc
-    ws2_32
-    wmcodecdspuuid
-    Msdmo
-    Dmoguids
-    secur32
-    winmm)
+SET(CMAKE_EXE_LINKER_FLAGS "-z noexecstack -z relro -z now -pie")
+
+link_directories(
+    /src/webrtc-checkout/src/out/Default)
+
+target_link_libraries(libwebrtc-webrtc-echo
+    -L/src/webrtc-checkout/src/out/Default
+    event       # Important that "event" precedes "webrtc-full" as the webrtc library contains duplicate, but older, symbols.
+    webrtc-full
+    dl
+    pthread
+    X11
+    glib-2.0
+    stdc++
+    atomic)

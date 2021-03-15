@@ -54,16 +54,17 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NOMINMAX;WEBRTC_WIN;_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Dev\webrtc-checkout\src;C:\Dev\webrtc-checkout\src\third_party\abseil-cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;wmcodecdspuuid.lib;Msdmo.lib;Dmoguids.lib;secur32.lib;winmm.lib;webrtc.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Iphlpapi.lib;ws2_32.lib;wmcodecdspuuid.lib;Msdmo.lib;Dmoguids.lib;secur32.lib;winmm.lib;webrtc.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -86,6 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="fake_audio_capture_module.cc" />
     <ClCompile Include="HttpSimpleServer.cpp" />
     <ClCompile Include="libwebrtc-webrtc-echo.cpp" />
     <ClCompile Include="PcFactory.cpp" />
@@ -96,9 +98,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Dockerfile" />
+    <None Include="Dockerfile-AppBuilder" />
+    <None Include="Dockerfile-Builder" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HttpSimpleServer.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="PcFactory.h" />
     <ClInclude Include="PcObserver.h" />
   </ItemGroup>
