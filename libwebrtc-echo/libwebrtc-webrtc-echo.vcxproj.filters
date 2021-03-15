@@ -38,7 +38,6 @@
     <None Include="README.md" />
     <None Include="Dockerfile-Builder" />
     <None Include="Dockerfile" />
-    <None Include="Dockerfile-AppBuilder" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PcFactory.h">

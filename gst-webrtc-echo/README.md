@@ -4,11 +4,11 @@
 
 ## Building docker image
 
-`docker build -t gst-webrtc-echo:0.x --progress=plain .`
+`docker build -t gstreamer-webrtc-echo:0.x --progress=plain .`
 
 ## Running docker image
 
-`docker run -it --init --rm -p 8080:8080 ghcr.io/sipsorcery/gst-webrtc-echo:latest`
+`docker run -it --init --rm -p 8080:8080 ghcr.io/sipsorcery/gstreamer-webrtc-echo:latest`
 
 Set a gstreamer environment variable for additional logging:
 
