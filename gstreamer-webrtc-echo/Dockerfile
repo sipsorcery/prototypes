@@ -1,4 +1,4 @@
-FROM gst-builder:latest as builder
+FROM gstreamer-builder:latest as builder
 FROM ubuntu:latest as final
 
 # Install packages with the required runtime libraries.
@@ -12,11 +12,11 @@ COPY --from=builder /usr/local/lib/x86_64-linux-gnu/libgstreamer-full-1.0.so /us
 #TODO: Determine apt package for libdssim. 
 COPY --from=builder /usr/local/lib/x86_64-linux-gnu/libdssim-lib.so /usr/lib/libdssim-lib.so.1
 
-WORKDIR /src/gst-webrtc-echo
-COPY ["cJSON.c", "cJSON.h", "CMakeLists.txt", "gst-webrtc-echo.c", "./"]
-WORKDIR /src/gst-webrtc-echo/builddir
-RUN cmake .. && make && cp gst-webrtc-echo /
+WORKDIR /src/gstreamer-webrtc-echo
+COPY ["cJSON.c", "cJSON.h", "CMakeLists.txt", "gstreamer-webrtc-echo.c", "./"]
+WORKDIR /src/gstreamer-webrtc-echo/builddir
+RUN cmake .. && make && cp gstreamer-webrtc-echo /
 WORKDIR /
 
 EXPOSE 8080
-ENTRYPOINT ["/gst-webrtc-echo"]
+ENTRYPOINT ["/gstreamer-webrtc-echo"]

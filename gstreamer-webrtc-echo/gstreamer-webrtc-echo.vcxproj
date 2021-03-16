@@ -12,12 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cJSON.c" />
-    <ClCompile Include="gst-webrtc-echo.c" />
+    <ClCompile Include="gstreamer-webrtc-echo.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CMakelists.txt" />
     <None Include="Dockerfile" />
-    <None Include="Dockerfile-Gstbuilder" />
+    <None Include="Dockerfile-Gstreamerbuilder" />
     <None Include="index.html" />
     <None Include="README.md" />
   </ItemGroup>
@@ -30,7 +30,7 @@
     <ProjectGuid>{76a3e204-6ebb-4f61-a752-1bf68ec98ea9}</ProjectGuid>
     <RootNamespace>GstWebRTCEchoTestServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>gst-webrtc-echo</ProjectName>
+    <ProjectName>gstreamer-webrtc-echo</ProjectName>
     <!--<GStreamerBasePath>C:\gstreamer</GStreamerBasePath>-->
     <GStreamerBasePath>C:\gstreamer-1.18.3\1.0\msvc_x86_64</GStreamerBasePath>
   </PropertyGroup>

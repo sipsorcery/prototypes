@@ -1,4 +1,4 @@
-FROM ubuntu:latest as gst-builder
+FROM ubuntu:latest
 
 # Install packages and build system for gstreamer build and app dependencies.
 RUN apt update && DEBIAN_FRONTEND="noninteractive" apt install -y \
